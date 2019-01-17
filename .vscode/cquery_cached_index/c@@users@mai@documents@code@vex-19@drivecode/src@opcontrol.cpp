@@ -19,14 +19,31 @@ void opcontrol() {
 	pros::Motor left_mtr2(2);
 	pros::Motor right_mtr1(3);
 	pros::Motor right_mtr2(4);
+
+	left_mtr1.set_brake_mode(pros::E_MOTOR_BRAKE_BRAKE);
+	left_mtr2.set_brake_mode(pros::E_MOTOR_BRAKE_BRAKE);
+	right_mtr1.set_brake_mode(pros::E_MOTOR_BRAKE_BRAKE);
+	right_mtr2.set_brake_mode(pros::E_MOTOR_BRAKE_BRAKE);
+
 	while (true) {
 		int left = master.get_analog(ANALOG_LEFT_Y);
 		int right = master.get_analog(ANALOG_RIGHT_Y);
 
-		left_mtr1 = left;
-		left_mtr2 = left;
-		right_mtr1 = right;
-		right_mtr2 = right;
+		if(abs(left)<5){
+			left_mtr1.move_velocity(0);
+			left_mtr2.move_velocity(0);
+		}else{
+			left_mtr1 = left;
+			left_mtr2 = left;
+		}
+
+		if(abs(right)<5){
+			right_mtr1.move_velocity(0);
+			right_mtr2.move_velocity(0);
+		}else{
+			right_mtr1 = right;
+			right_mtr2 = right;
+		}
 		pros::delay(20);
 	}
 }
