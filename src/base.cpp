@@ -5,6 +5,8 @@ int speed = 63; //max speed
 double left_pos = 0;
 double right_pos = 0;
 double error = 0;
+double last_error = 0;
+double total_error = 0;
 double circ = pi*wheelDiameter;
 
 //Inputs inches, outputs proper tick value needed
@@ -58,9 +60,13 @@ void turn90degrees(int direction){
 			error = setpoint - right_pos;
 		if ((error)<=turn_threshold)
 			break;
-		speed = map(error * KP, -setpoint, setpoint, -MAX_SPEED,MAX_SPEED);
-
+		//speed = map(error*KP + (error-last_error)*KD + total_error*KI, -setpoint, setpoint, -MAX_SPEED,MAX_SPEED);
+		speed = error*KP + (error-last_error)*KD + total_error*KI;
 		setSpeed(speed);
+
+		last_error = error;
+		total_error += error;
+		pros::delay(50);
 		readEncoders();
 	}
 	setSpeed(0);
@@ -79,7 +85,13 @@ void moveStraight(double distance_in_inches){
 		error = setpoint - left_pos; // = setpoint - right_pos1 (in degrees)
 		if ((error)<=threshold)
 			break;
+
+		speed = error*KP + (error-last_error)*KD + total_error*KI;
 		setSpeed(speed);
+
+		last_error = error;
+		total_error += error;
+		pros::delay(50);
 		readEncoders();
 	}
 	setSpeed(0);
