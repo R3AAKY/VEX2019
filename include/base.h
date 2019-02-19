@@ -9,6 +9,9 @@ extern pros::Motor left_mtr1;
 extern pros::Motor left_mtr2;
 extern pros::Motor right_mtr1;
 extern pros::Motor right_mtr2;
+extern double left_pos;
+extern double right_pos;
+extern double error;
 
 #define MAX_SPEED 127
 #define pi 3.14
@@ -19,16 +22,14 @@ extern pros::Motor right_mtr2;
 #define turn_threshold 20
 #define degreesPerRotation 360
 #define wheelDiameter 4 //4.0" wheels
-
-double circ, left_pos, right_pos, error, setpoint, speed;
-bool isLeft;
+#define isLeft true
 
 double inchesToDegrees(double inches);
 double degreesToInches(double degrees);
 double map(double x, double in_min, double in_max, double out_min, double out_max);
 void turn90degrees(int direction);
 void moveStraight(double distance_in_inches);
-void setSpeed(int speed);
+void setSpeed(int s);
 void readEncoders();
 
 #endif //base.h

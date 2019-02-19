@@ -16,7 +16,7 @@
  */
 void opcontrol() {
 moveStraight(100);
-turn90degrees(LEFT);
+turn90degrees(isLeft); //turn left 
 pros::delay(100);
 	while (true){
 	std::cout << "error: " << error << "			left position: " << left_pos << "			right position: " << right_pos << "\n";
