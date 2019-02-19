@@ -20,6 +20,7 @@ extern double error;
 #define KD 0.1f
 #define threshold 20
 #define turn_threshold 20
+#define integral_threshold 100
 #define degreesPerRotation 360
 #define wheelDiameter 4 //4.0" wheels
 #define isLeft true

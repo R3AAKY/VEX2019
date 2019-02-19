@@ -58,14 +58,15 @@ void turn90degrees(int direction){
 			error = setpoint - left_pos; // = setpoint - right_pos1 (in degrees)
 		else if (direction==2)
 			error = setpoint - right_pos;
-		if ((error)<=turn_threshold)
+		if (fabs(error)<=turn_threshold)
 			break;
 		//speed = map(error*KP + (error-last_error)*KD + total_error*KI, -setpoint, setpoint, -MAX_SPEED,MAX_SPEED);
 		speed = error*KP + (error-last_error)*KD + total_error*KI;
 		setSpeed(speed);
 
 		last_error = error;
-		total_error += error;
+		if (fabs(error) < integral_threshold)
+			total_error += error;
 		pros::delay(50);
 		readEncoders();
 	}
@@ -83,14 +84,16 @@ void moveStraight(double distance_in_inches){
 */
 	while(true){
 		error = setpoint - left_pos; // = setpoint - right_pos1 (in degrees)
-		if ((error)<=threshold)
+		if (fabs(error)<=threshold)
 			break;
 
 		speed = error*KP + (error-last_error)*KD + total_error*KI;
 		setSpeed(speed);
 
 		last_error = error;
-		total_error += error;
+
+		if (fabs(error) < integral_threshold)
+			total_error += error;
 		pros::delay(50);
 		readEncoders();
 	}
