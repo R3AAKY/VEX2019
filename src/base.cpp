@@ -10,6 +10,7 @@ double total_error = 0;
 double circ = pi*wheelDiameter;
 double robotCirc = 11*pi;
 
+
 //Inputs inches, outputs proper tick value needed
 double inchesToDegrees(double inches){
 	return (inches/circ)*degreesPerRotation;
@@ -18,12 +19,6 @@ double inchesToDegrees(double inches){
 double degreesToInches(double degrees)
 {
 	return (degrees/degreesPerRotation)*circ;
-}
-
-// Used to relate position value (meters) to speed/velocity (meters per second) since they are two different units.
-double map(double x, double in_min, double in_max, double out_min, double out_max)
-{
-  return (x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min;
 }
 
 void readEncoders(){
@@ -36,6 +31,8 @@ void printEncoders(){
 }
 
 void resetEncoders(){
+	left_pos = 0;
+	right_pos = 0;
   left_sensor.reset(); // The encoder is now zero again
 	right_sensor.reset(); // The encoder is now zero again
 }
@@ -47,41 +44,42 @@ void setSpeed(int left_speed,int right_speed){
 	right_mtr2 = right_speed;
 }
 
-
 // Found 90 degree turn to be 0.6875 rotations.
-// 1 for left turn, 2 for right turn
+// (false) for left turn, isRight (true) for right turn
 void turn90degrees (bool direction){
 	// multiply by 2 because only one set of wheels is turning
   double setpoint = 2*inchesToDegrees(robotCirc/4); //quarter turn in degrees.
 	resetEncoders();
   readEncoders();
 
-	if (direction == isLeft){
+	if (direction == isRight){
 		left_mtr1.set_reversed(false);
 		left_mtr2.set_reversed(false);
 		right_mtr1.set_reversed(false);
 		right_mtr2.set_reversed(false);
+		error = setpoint - left_pos;
 	}
-	else if (direction != isLeft)
+	else if (direction != isRight)
 	{
 		left_mtr1.set_reversed(true);
 		left_mtr2.set_reversed(true);
 		right_mtr1.set_reversed(true);
 		right_mtr2.set_reversed(true);
+		error = setpoint - right_pos;
 	}
 	while(true){
-		if (direction == isLeft)
+		if (direction == isRight)
 			error = setpoint - left_pos; // = setpoint - right_pos1 (in degrees)
-		else if (direction != isLeft)
+		else if (direction != isRight)
 			error = setpoint - right_pos;
 		printEncoders();
 		if (fabs(error)<=turn_threshold)
 			break;
 		//speed = map(error*KP + (error-last_error)*KD + total_error*KI, -setpoint, setpoint, -MAX_SPEED,MAX_SPEED);
 		speed = error*KP + (error-last_error)*KD + total_error*KI;
-		if (direction == isLeft)
+		if (direction == isRight)
 			setSpeed(speed,0);
-		else if (direction != isLeft)
+		else if (direction != isRight)
 			setSpeed(0,speed);
 
 		last_error = error;
@@ -91,8 +89,12 @@ void turn90degrees (bool direction){
 		readEncoders();
 	}
 	setSpeed(0,0);
+
 //	printEncoders();
+	pros::delay(100);
+	//std::cout << "out of loop!" << "\n" << "\n" << "\n";
 	resetEncoders();
+	printEncoders();
 	left_mtr1.set_reversed(false);
 	left_mtr2.set_reversed(false);
 	right_mtr1.set_reversed(true);
@@ -127,6 +129,7 @@ void moveStraight(double distance_in_inches){
 		readEncoders();
 	}
 	setSpeed(0,0);
+
 	resetEncoders();
 	pros::delay(10);
 }
