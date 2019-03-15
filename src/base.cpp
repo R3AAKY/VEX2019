@@ -8,8 +8,7 @@ double error = 0;
 double last_error = 0;
 double total_error = 0;
 double circ = pi*wheelDiameter;
-double robotCirc = 11*pi;
-
+double robotCirc = 10.75*pi;
 
 //Inputs inches, outputs proper tick value needed
 double inchesToDegrees(double inches){
@@ -27,7 +26,7 @@ void readEncoders(){
 }
 
 void printEncoders(){
-	std::cout << "error: " << error << "			left position: " << left_pos << "			right position: " << right_pos << "\n";
+	std::cout << "error: " << error <<"	left pos: " << left_pos << "	right pos: " << right_pos << "	angle: " << gyro.get_value() << "\n";
 }
 
 void resetEncoders(){
@@ -35,6 +34,12 @@ void resetEncoders(){
 	right_pos = 0;
   left_sensor.reset(); // The encoder is now zero again
 	right_sensor.reset(); // The encoder is now zero again
+	pros::delay(1500);
+}
+
+double map(double x, double in_min, double in_max, double out_min, double out_max)
+{
+  return (x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min;
 }
 
 void setSpeed(int left_speed,int right_speed){
@@ -48,10 +53,8 @@ void setSpeed(int left_speed,int right_speed){
 // (false) for left turn, isRight (true) for right turn
 void turn90degrees (bool direction){
 	// multiply by 2 because only one set of wheels is turning
-  double setpoint = 2*inchesToDegrees(robotCirc/4); //quarter turn in degrees.
-	resetEncoders();
+  double setpoint = inchesToDegrees(robotCirc/4); //quarter turn in degrees.
   readEncoders();
-
 	if (direction == isRight){
 		left_mtr1.set_reversed(false);
 		left_mtr2.set_reversed(false);
@@ -67,32 +70,40 @@ void turn90degrees (bool direction){
 		right_mtr2.set_reversed(true);
 		error = setpoint - right_pos;
 	}
-	while(true){
+
+	while(fabs(error)>turn_threshold){
 		if (direction == isRight)
 			error = setpoint - left_pos; // = setpoint - right_pos1 (in degrees)
-		else if (direction != isRight)
+		else if (direction == !isRight)
 			error = setpoint - right_pos;
+
 		printEncoders();
+
 		if (fabs(error)<=turn_threshold)
 			break;
-		//speed = map(error*KP + (error-last_error)*KD + total_error*KI, -setpoint, setpoint, -MAX_SPEED,MAX_SPEED);
-		speed = error*KP + (error-last_error)*KD + total_error*KI;
+
+			//speed = error*KP + (error-last_error)*KD + total_error*KI;
+		//rspeed = rerror*KP + (rerror-rlast_error)*KD + rtotal_error*KI;
 		if (direction == isRight)
-			setSpeed(speed,0);
+				speed = map(error*KP + (error-last_error)*KD + total_error*KI, -setpoint, setpoint, -MAX_SPEED,MAX_SPEED);
 		else if (direction != isRight)
-			setSpeed(0,speed);
+				speed = map(error*KPl + (error-last_error)*KDl + total_error*KIl, -setpoint, setpoint, -MAX_SPEED,MAX_SPEED);
+
+		setSpeed(speed,speed);
 
 		last_error = error;
+
 		if (fabs(error) < integral_threshold)
 			total_error += error;
-		pros::delay(50);
-		readEncoders();
+		pros::delay(10);
 	}
 	setSpeed(0,0);
-
-//	printEncoders();
+	last_error = 0;
+	total_error = 0;
+	readEncoders();
+	printEncoders();
 	pros::delay(100);
-	//std::cout << "out of loop!" << "\n" << "\n" << "\n";
+	std::cout << "out of loop!" << "\n\n\n";
 	resetEncoders();
 	printEncoders();
 	left_mtr1.set_reversed(false);
@@ -117,7 +128,8 @@ void moveStraight(double distance_in_inches){
 		if (fabs(error)<=threshold)
 			break;
 
-		speed = error*KP + (error-last_error)*KD + total_error*KI;
+		speed = map (error*2 + (error-last_error)*KD + total_error*KI, -setpoint,setpoint,-MAX_SPEED,MAX_SPEED);
+		//speed = error*KP + (error-last_error)*KD + total_error*KI;
 		setSpeed(speed,speed);
 
 		last_error = error;

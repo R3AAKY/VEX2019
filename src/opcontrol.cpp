@@ -15,14 +15,21 @@
  * task, not resume it from where it left off.
  */
 void opcontrol() {
-//	moveStraight(20);
-
-turn90degrees(isLeft); //turn left
-//pros::delay(100);
-/*	while (true){
-	readEncoders();
-	std::cout << "error: " << error << "			left position: " << left_pos << "			right position: " << right_pos << "\n";
-//}
-	}
-	*/
+//moveStraight(12);
+/*while (true)
+{
+  readEncoders();
+  printEncoders();
+  pros::delay(1000);
+}
+*/
+turn90degrees(isRight); //turn right
+pros::delay(500);
+turn90degrees(isRight); //turn right
+pros::delay(500);
+/*turn90degrees(!isRight); //turn left
+pros::delay(500);
+turn90degrees(!isRight); //turn left
+pros::delay(500);
+*/
 }

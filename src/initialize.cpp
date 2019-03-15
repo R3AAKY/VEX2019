@@ -18,6 +18,7 @@ pros::Motor left_mtr1(LEFT_MOTOR_FRONT, false);
 pros::Motor left_mtr2(LEFT_MOTOR_BACK, false);
 pros::Motor right_mtr1(RIGHT_MOTOR_FRONT, true);
 pros::Motor right_mtr2(RIGHT_MOTOR_BACK, true);
+pros::ADIGyro gyro('H');
 
 void initDrive(){
 	left_mtr1.set_brake_mode(pros::E_MOTOR_BRAKE_BRAKE);
@@ -47,6 +48,8 @@ void initialize() {
 	pros::lcd::register_btn1_cb(on_center_button);
 	initDrive();
 	resetEncoders();
+	gyro.reset();
+	pros::delay(1500);
 }
 
 /**
