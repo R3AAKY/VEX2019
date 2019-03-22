@@ -3,12 +3,24 @@
 #ifndef _BASE_H_
 #define _BASE_H_
 
+extern pros::Controller master;
+extern pros::ADIDigitalIn limit_switch1;
 extern pros::ADIEncoder left_sensor;
 extern pros::ADIEncoder right_sensor;
 extern pros::Motor left_mtr1;
 extern pros::Motor left_mtr2;
 extern pros::Motor right_mtr1;
 extern pros::Motor right_mtr2;
+
+extern pros::Motor R_FLY_8;
+extern pros::Motor L_FLY_10;
+extern pros::Motor INTAKE_19;
+
+extern pros::Motor L_ARM_9;
+extern pros::Motor R_ARM_7;
+extern pros::Motor L_ARM_9;
+extern pros::Motor L_CLAW20;
+
 extern pros::ADIGyro gyro;
 extern double left_pos;
 extern double right_pos;
@@ -26,7 +38,7 @@ extern double error;
 
 #define threshold 20
 #define turn_threshold 1
-#define integral_threshold 40
+#define integralThreshold 40
 #define degreesPerRotation 360
 #define wheelDiameter 3.125
 #define isRight true
@@ -40,5 +52,11 @@ void setSpeed(int left_speed,int right_speed);
 double map(double x, double in_min, double in_max, double out_min, double out_max);
 void readEncoders();
 void resetEncoders();
-
+void armPID(double target, pros::Motor *mtr, double Kp, double Ki, double Kd);
+void drivePID(double target, pros::Motor *mtr, pros::ADIEncoder *sensorL, pros::ADIEncoder *sensorR, double Kp, double Ki, double Kd);
+void resetArm();
+void armControl();
+void debug(pros::Motor *mtr, pros::ADIDigitalIn *swtch);
+void flyWheel();
+void flyWheelPID(int targetFlyWheelSpeed);
 #endif //base.h

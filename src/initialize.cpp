@@ -11,6 +11,16 @@
 #define RIGHT_MOTOR_FRONT 1
 #define RIGHT_MOTOR_BACK 2
 
+#define R_FLY 8
+#define L_FLY 10
+#define INTAKE 19
+#define RIGHT_ARM 7
+#define LEFT_ARM 9
+#define LEFT_CLAW 20
+
+#define LIMIT_SWITCH_1 'E'
+pros::ADIDigitalIn limit_switch1 (LIMIT_SWITCH_1);
+
 pros::Controller master(pros::E_CONTROLLER_MASTER);
 pros::ADIEncoder left_sensor (ENCODER_LEFT_TOP,ENCODER_LEFT_BOTTOM, true);
 pros::ADIEncoder right_sensor (ENCODER_RIGHT_TOP,ENCODER_RIGHT_BOTTOM, false);
@@ -18,6 +28,16 @@ pros::Motor left_mtr1(LEFT_MOTOR_FRONT, false);
 pros::Motor left_mtr2(LEFT_MOTOR_BACK, false);
 pros::Motor right_mtr1(RIGHT_MOTOR_FRONT, true);
 pros::Motor right_mtr2(RIGHT_MOTOR_BACK, true);
+
+pros::Motor R_FLY_8 (R_FLY,true);
+pros::Motor L_FLY_10 (L_FLY);
+
+pros::Motor INTAKE_19(INTAKE,true);
+
+pros::Motor R_ARM_7(RIGHT_ARM, true);
+pros::Motor L_ARM_9(LEFT_ARM,false);
+pros::Motor L_CLAW20(LEFT_CLAW, true);
+
 pros::ADIGyro gyro('H');
 
 void initDrive(){
@@ -25,6 +45,18 @@ void initDrive(){
 	left_mtr2.set_brake_mode(pros::E_MOTOR_BRAKE_BRAKE);
 	right_mtr1.set_brake_mode(pros::E_MOTOR_BRAKE_BRAKE);
 	right_mtr2.set_brake_mode(pros::E_MOTOR_BRAKE_BRAKE);
+
+	R_FLY_8.set_brake_mode(pros::E_MOTOR_BRAKE_BRAKE);
+	L_FLY_10.set_brake_mode(pros::E_MOTOR_BRAKE_BRAKE);
+
+	INTAKE_19.set_brake_mode(pros::E_MOTOR_BRAKE_BRAKE);
+
+	R_ARM_7.set_brake_mode(pros::E_MOTOR_BRAKE_BRAKE);
+	L_ARM_9.set_brake_mode(pros::E_MOTOR_BRAKE_BRAKE);
+	L_CLAW20.set_brake_mode(pros::E_MOTOR_BRAKE_BRAKE);
+	R_ARM_7.set_encoder_units(pros::E_MOTOR_ENCODER_DEGREES);
+	L_ARM_9.set_encoder_units(pros::E_MOTOR_ENCODER_DEGREES);
+	L_CLAW20.set_encoder_units(pros::E_MOTOR_ENCODER_DEGREES);
 }
 
 void on_center_button() {

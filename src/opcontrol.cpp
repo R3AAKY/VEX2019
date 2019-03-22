@@ -1,5 +1,6 @@
 #include "main.h"
 #include "base.h"
+#include <fstream>
 
 /**
  * Runs the operator control code. This function will be started in its own task
@@ -14,22 +15,79 @@
  * operator control task will be stopped. Re-enabling the robot will restart the
  * task, not resume it from where it left off.
  */
+ /*
+ typedef struct {
+   double target;
+   pros::ADIEncoder left_sensor;
+   pros::ADIEncoder right_sensor;
+   double Kp, Kd, Ki;
+ } drive_arg;
+
+// CONTROLLER
+ while (true) {
+		int left = master.get_analog(ANALOG_LEFT_Y);
+		int right = master.get_analog(ANALOG_RIGHT_Y);
+
+		if(abs(left)<5){
+			left_mtr1.move_velocity(0);
+			left_mtr2.move_velocity(0);
+		}else{
+			left_mtr1 = left;
+			left_mtr2 = left;
+		}
+
+		if(abs(right)<5){
+			right_mtr1.move_velocity(0);
+			right_mtr2.move_velocity(0);
+		}else{
+			right_mtr1 = right;
+			right_mtr2 = right;
+		}
+
+		pros::delay(20);
+	}
+*/
+
 void opcontrol() {
-//moveStraight(12);
-/*while (true)
-{
-  readEncoders();
-  printEncoders();
+  /*
+  std::ofstream f;
+  std::cout << "text" << '\n';
+  f.open("C:/Users/denga/Desktop/VEX2019/shooter.csv",std::ios::in | std::ios::out | std::ios::binary);
+  f << "1,2,3" << '\n';
+  f.close();
+*/
+ //flyWheelPID(60);
+ while (true) {
+		int left = master.get_analog(ANALOG_LEFT_Y);
+		int right = master.get_analog(ANALOG_RIGHT_Y);
+
+		if(abs(left)<5){
+      L_FLY_10 = 0;
+      R_FLY_8 = 0;
+		}else{
+			L_FLY_10 = left;
+			R_FLY_8 = left;
+		}
+
+		if(abs(right)<5){
+			INTAKE_19 = 0;
+
+		}else{
+		  INTAKE_19 = right;
+		}
+
+		pros::delay(20);
+	}
+ //L_CLAW20 = 100;
+//pros::Task drive_task(drivePID,(10,left_sensor,right_sensor,KP,KD,KI));
+//armControl();
+//flyWheelPID(40);
+/*
+L_CLAW20.tare_position();
+L_CLAW20.set_encoder_units(pros::E_MOTOR_ENCODER_DEGREES);
+while(true){
+  std::cout<< "L:" << L_CLAW20.get_position() << "\n";
   pros::delay(1000);
 }
-*/
-turn90degrees(isRight); //turn right
-pros::delay(500);
-turn90degrees(isRight); //turn right
-pros::delay(500);
-/*turn90degrees(!isRight); //turn left
-pros::delay(500);
-turn90degrees(!isRight); //turn left
-pros::delay(500);
 */
 }
