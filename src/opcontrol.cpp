@@ -49,14 +49,35 @@
 */
 
 void opcontrol() {
-  /*
+/*
   std::ofstream f;
   std::cout << "text" << '\n';
-  f.open("C:/Users/denga/Desktop/VEX2019/shooter.csv",std::ios::in | std::ios::out | std::ios::binary);
-  f << "1,2,3" << '\n';
+  f.open("shooter.csv",std::ios::in | std::ios::out | std::ios::binary);
+  int count =0;
+  while(count !=20)
+  {
+
+  for (int i= 0; i <20; i++)
+    f << i << "," << i+i << '\n';
+    count++;
+  }
   f.close();
+  */
+  flyWheelPID(45, &L_FLY_10, &R_FLY_8, 0.0042, 0, 1.1);
+
+/*
+L_FLY_10 = 40;
+R_FLY_8 = 40;
+while(true){
+  if(master.get_digital(pros::E_CONTROLLER_DIGITAL_A)==1)
+      break;
+std::cout << "	L Pos: " << L_FLY_10.get_position() << "	R Pos: " << R_FLY_8.get_position() << "	L Vel/R Vel: " << L_FLY_10.get_actual_velocity() <<'/' << R_FLY_8.get_actual_velocity() << "\n";
+pros::delay(10);
+}
+L_FLY_10 = 0;
+R_FLY_8 = 0;
 */
- //flyWheelPID(60);
+ /*
  while (true) {
 		int left = master.get_analog(ANALOG_LEFT_Y);
 		int right = master.get_analog(ANALOG_RIGHT_Y);
@@ -78,6 +99,8 @@ void opcontrol() {
 
 		pros::delay(20);
 	}
+  */
+
  //L_CLAW20 = 100;
 //pros::Task drive_task(drivePID,(10,left_sensor,right_sensor,KP,KD,KI));
 //armControl();

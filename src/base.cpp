@@ -311,6 +311,8 @@ void armControl(){
 	//Using Quad Encoders
 	void drivePID(double target, pros::ADIEncoder *sensorL, pros::ADIEncoder *sensorR, double Kp, double Ki, double Kd){
 			double errorL, errorR, speedL, speedR, sum;
+			int adjustmentL =0;
+			int adjustmentR = 0;
 			double average = 0;
 			double lastErrorL = 0;
 			double lastErrorR = 0;
@@ -367,6 +369,97 @@ void armControl(){
 		pros::delay(100);
 		std::cout << "FINAL READINGS" << '\n';
 		std::cout << "E: " << error << "	Average: " << average << "	LPos: " << sensorL->get_value() << "	RPos: " << sensorR->get_value() << '\n';
+	}
+
+	void flyWheelPID(int target, pros::Motor *mtrL, pros::Motor *mtrR, double Kp, double Ki, double Kd){
+			double errorL, errorR, speedL, speedR, sum;
+			double average = 0;
+		 	double lastErrorL = 0;
+			double lastErrorR = 0;
+			int totalErrorL = 0;
+			int totalErrorR = 0;
+			int integralThresh = 2;
+			int integralLimit = 15;
+		 	double adjustmentL =0;
+			double adjustmentR = 0;
+			std::deque <double> que;
+			que.push_front(error); // one element
+			mtrL->tare_position();
+			mtrL->set_zero_position(mtrL->get_position());
+			mtrR->tare_position();
+			mtrR->set_zero_position(mtrR->get_position());
+			pros::delay(550);
+			speedL = target;
+			speedR = target;
+			while (true) 	 {
+		//		if	(master.get_digital(pros::E_CONTROLLER_DIGITAL_A)!=0)
+		 	// 		break;
+			// P
+			errorL = target - mtrL->get_actual_velocity();
+			errorR = target - mtrR->get_actual_velocity();
+
+
+
+			// I - starts summing after a certain threshold and ensures total error doesn't become very large
+			if (fabs(errorL) < integralThresh){
+				if (totalErrorL > integralLimit)
+					totalErrorL = integralLimit;
+				else if (totalErrorL < -integralLimit)
+					totalErrorL = -integralLimit;
+			}
+			else
+				totalErrorL = 0;
+
+			if (fabs(errorR) < integralThresh){
+				if (totalErrorR > integralLimit)
+					totalErrorR = integralLimit;
+				else if (totalErrorR < -integralLimit)
+					totalErrorR = -integralLimit;
+			}
+			else
+				totalErrorR = 0;
+
+	/* Not sure what to do with the averaging.
+			if (que.size()<5){
+			que.push_front(error);
+			sum += error;
+			}
+			else{
+			sum += error - que.back();
+			que.push_front(error);
+			}
+			average = sum/(size(que));
+	*/
+			//speedL = map(errorL*Kp + (errorL-lastErrorL)*Kd + totalErrorL*Ki, -target, target, -MAX_SPEED, MAX_SPEED);
+			//speedR = map(errorR*Kp + (errorR-lastErrorR)*Kd + totalErrorR*Ki, -target, target, -MAX_SPEED, MAX_SPEED);
+			adjustmentL = errorL*Kp + (errorL-lastErrorL)*Kd + totalErrorL*Ki;
+			adjustmentR = errorR*Kp + (errorR-lastErrorR)*Kd + totalErrorR*Ki;
+			if (speedL > 127)
+				speedL = 127;
+			else
+			speedL += adjustmentL;
+			if (speedR >127)
+				speedR = 127;
+			else
+				speedR += adjustmentR;
+			mtrL->move(speedL);
+			mtrR->move(speedR);
+
+			//debug
+			//std::cout << (*mtrL).get_position() << "	Left_E: " << errorL << "	Right_E: " << errorR <<  "	LPos: " << mtrL->get_position() << "	RPos: " << mtrR->get_position() << "	L Vel/R Vel: " << mtrL->get_actual_velocity() <<'/' << mtrR->get_actual_velocity() << '\n';
+			std::cout << "	Left_S: " << speedL << "	Right_S: " << speedR  << "	L_Deriv: "<< (errorL-lastErrorL) << "	R_Deriv: " << (errorR - lastErrorR) << "	L_Adjustment: " << adjustmentL << "	R_Adjustment: " << adjustmentR << "	L Vel/R Vel: "<< mtrL->get_actual_velocity() <<'/' << mtrR->get_actual_velocity() << '\n';
+
+
+			// D
+			lastErrorL = errorL;
+			lastErrorR = errorR;
+
+			pros::delay(250);
+		}
+		mtrL->move (0);
+		mtrR->move(0);
+		pros::delay(100);
+
 	}
 
 	void debugSwitch (pros::Motor *mtr, pros::ADIDigitalIn *swtch){
@@ -459,6 +552,8 @@ int deltaTime = 0;
 
 while (true)
 {
+	 if	(master.get_digital(pros::E_CONTROLLER_DIGITAL_A)==1)
+	 	break;
 
 		currentVelocity = L_FLY_10.get_actual_velocity();
 

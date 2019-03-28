@@ -59,4 +59,5 @@ void armControl();
 void debug(pros::Motor *mtr, pros::ADIDigitalIn *swtch);
 void flyWheel();
 void flyWheelPID(int targetFlyWheelSpeed);
+void flyWheelPID(int target, pros::Motor *mtrL, pros::Motor *mtrR, double Kp, double Ki, double Kd);
 #endif //base.h
