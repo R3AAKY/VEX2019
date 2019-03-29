@@ -10,7 +10,7 @@ double totalError = 0;
 double circ = pi*wheelDiameter;
 double robotCirc = 10.75*pi;
 
-int stage=2; //arm default stage
+int stage=1; //arm default stage
 
 //Inputs inches, outputs proper tick value needed
 double inchesToDegrees(double inches){
@@ -156,47 +156,27 @@ void resetArm(){
 	R_ARM_7.set_zero_position(R_ARM_7.get_position());
 	L_ARM_9.set_zero_position(L_ARM_9.get_position());
 	L_CLAW20.set_zero_position(L_CLAW20.get_position());
+	R_ARM_7.set_encoder_units(pros::E_MOTOR_ENCODER_DEGREES);
+	L_ARM_9.set_encoder_units(pros::E_MOTOR_ENCODER_DEGREES);
+	L_CLAW20.set_encoder_units(pros::E_MOTOR_ENCODER_DEGREES);
 	pros::delay(1000);
 }
 
 void armControl(){
-	int rotationTicks = 0;
+	int rotationDegrees = 0;
 	int armSpeed = 0;
-	int arm_rotationTicks = 0;
+	int arm_rotationDegrees = 0;
 	resetArm();
 
 	switch (stage){
 		case 1:{
 			//go to stage 2
 			//rotationTicks = (36/12)*270; //gear ratio driven/driver = 3, 270 degree rotation
-			rotationTicks = 650;
-			double setpoint = rotationTicks;
-			error = setpoint - L_CLAW20.get_position();
-			while(fabs(error)>5){
-				error = setpoint - L_CLAW20.get_position(); // = setpoint - right_pos1 (in degrees)
-				if (fabs(error)<=5)
-					break;
-				std::cout << "Error: " << error << "	Position: " << L_CLAW20.get_position() << "		Motor Power: " << L_CLAW20.get_power() <<'\n';
+			rotationDegrees = -765;
+			armPID(rotationDegrees, &L_CLAW20,1,0,0);
 
-				armSpeed = map(error, -setpoint, setpoint, -MAX_SPEED,MAX_SPEED);
-				L_CLAW20 = armSpeed;
-			//	L_CLAW20.move_absolute(rotationTicks, armSpeed); // Moves rotationTicks forward
-				lastError = error;
 
-				if (fabs(error) < integralThreshold)
-					totalError += error;
-				pros::delay(10);
-			}
-
-		/*	L_CLAW20.move_absolute(rotationTicks, armSpeed); // Moves rotationTicks forward
-		  while (!(fabs(L_CLAW20.get_position())< rotationTicks+2)) {
-		    // Continue running this loop as long as the motor is not within +-2 units of its goal
-				std::cout << "Position: " << L_CLAW20.get_position() << '\n';
-				pros::delay(2);
-
-		  }
-			*/
-			/*
+			/* WITH LIMIT SWITCH
 				L_CLAW20 = 30;
 				while (limit_switch1.get_value()!= 1){
 				pros::delay(2);
@@ -208,8 +188,8 @@ void armControl(){
 
 		}
 		case 2:{
-			rotationTicks = -(36/12)*120; // required encoder degrees from stage 1 position to stage 2;
-			L_CLAW20.move_relative(rotationTicks, 100); // Moves rotationTicks forward
+			//rotationDegrees = -(36/12)*120; // required encoder degrees from stage 1 position to stage 2;
+			//L_CLAW20.move_relative(rotationDegrees, 100); // Moves rotationTicks forward
 			//armPID(rotationTicks, &L_CLAW20, 1, 0, 0);
 			/*arm_rotationTicks = (84/12)*90/2 ;//divided by 2 because two motors
 			L_ARM_9.move_relative(arm_rotationTicks, 100);
@@ -222,9 +202,9 @@ void armControl(){
 				pros::delay(2);
 			}
 			*/
-/*
-				L_ARM_9 = 100;
-				R_ARM_7 = 100;
+
+				L_ARM_9 = 110;
+				R_ARM_7 = 110;
 				while (limit_switch1.get_value()!= 1){
 				pros::delay(2);
 				}
@@ -233,13 +213,13 @@ void armControl(){
 				R_ARM_7 = 0;
 
 			stage = 3;
-			*/
 				std::cout <<"L: " << L_ARM_9.get_position() << "		R: " << R_ARM_7.get_position() << "\n";
 			break;
 		}
 		case 3:{
-			/*rotationTicks = +(36/12)*90;
-			L_CLAW20.move_relative(rotationTicks, 100); // Moves rotationTicks forward
+			rotationDegrees = -(36/12)*160;
+			armPID(rotationDegrees, &L_CLAW20, 1.5,0,0);
+			/*L_CLAW20.move_relative(rotationTicks, 100); // Moves rotationTicks forward
 
 			arm_rotationTicks = -(84/12)*90/2 ;//divided by 2 because two motors
 			L_ARM_9.move_relative(arm_rotationTicks, 100);
@@ -254,6 +234,22 @@ void armControl(){
 			L_ARM_9 = 0;
 			R_ARM_7 = 0;
 */
+
+			L_ARM_9 = -80;
+			R_ARM_7 = -80;
+				while (limit_switch2.get_value()!= 1){
+				pros::delay(2);
+				}
+				std::cout <<"L: " << L_ARM_9.get_position() << "		R: " << R_ARM_7.get_position() << "\n";
+				L_ARM_9 = 0;
+				R_ARM_7 = 0;
+
+			stage = 4;
+				std::cout <<"L: " << L_ARM_9.get_position() << "		R: " << R_ARM_7.get_position() << "\n";
+			break;
+		}
+		case 4:{
+
 			break;
 		}
 	}
@@ -262,21 +258,31 @@ void armControl(){
 
 	//Using Integrated Encoders
 	void armPID(double target,pros::Motor *mtr, double Kp, double Ki, double Kd){
+		bool rev = false;
+		if (target <0) //negative
+		{
+		 rev = true;
+			target = -target;
+			if (mtr->is_reversed())
+				mtr->set_reversed(false);
+			else
+				mtr->set_reversed(true);
+		}
 		double error = target - mtr->get_position();
 		double lastError = 0;
 		double totalError = 0;
+		double speed = 50;
 		double average = 0;
 		double integralLimit = 10;
 		double sum = error;
+		int counter = 0;
 		std::deque <double> que;
 		que.push_front(error); // one element in stack.
-
-		while(!(fabs(error)< 5)){
+		mtr->move(speed);
+		error = target - mtr->get_position();
+		while(!(fabs(error)< 10)){
 			error = target - mtr->get_position();
-			speed = map(error*Kp + (error-lastError)*Kd + totalError*Ki, -target, target, -MAX_SPEED, MAX_SPEED);
-			*mtr = speed;
 
-			lastError = error;
 
 			if (fabs(error) < integralThreshold){
 				if (totalError > integralLimit)
@@ -287,7 +293,7 @@ void armControl(){
 			else
 				totalError = 0;
 			//LIMITED STACK TO 5 ELEMENTS (error readings) for averaging
-			if (que.size()<5){
+			if (que.size()<3){
 			//stack not full yet, keep pushing elements in and summing individually.
 			que.push_front(error);
 			sum += error;
@@ -297,13 +303,38 @@ void armControl(){
 			sum += error - que.back();
 			que.push_front(error);
 			}
-			average = sum/(size(que));
+			if ((error-lastError) == 0)
+			{
+				counter++;
+				if (counter == 15)
+					break;
+			}
+			speed =map(error*Kp + (error-lastError)*Kd + totalError*Ki,-target,target, -MAX_SPEED, MAX_SPEED);
+			if (speed >= 127)
+				speed = 127;
 
-			std::cout << "E: " << error << "	Average: " << average << "	Pos: " << mtr->get_position() << '\n';
-			pros::delay(10);
+
+			mtr->move(speed);
+
+			lastError = error;
+
+			//std::cout << "E: " << error << "	Average: " << average << "	Pos: " << mtr->get_position() << '\n';
+			std::cout << "E: " << error << "	Pos: " << mtr->get_position() << '\n';
+			pros::delay(100);
 		}
-		*mtr = 0;
-		pros::delay(100);
+		mtr->move(0);
+		if (rev)
+		{
+		 	if (mtr->is_reversed())
+				mtr->set_reversed(false);
+			else
+				mtr->set_reversed(true);
+			rev = false;
+		}
+		mtr->tare_position();
+		mtr->set_zero_position(mtr->get_position());
+		
+		pros::delay(1000);
 		std::cout << "FINAL READINGS" << '\n';
 		std::cout <<"E: " << error << "	Average: " << average << "	Pos: " << mtr->get_position() << '\n';
 	}
@@ -346,7 +377,7 @@ void armControl(){
 			else
 				totalError = 0;
 
-/* Not sure what to do with the averaging.
+/*Not sure what to do with the averaging.
 			if (que.size()<5){
 			que.push_front(error);
 			sum += error;
@@ -376,10 +407,10 @@ void armControl(){
 			double average = 0;
 		 	double lastErrorL = 0;
 			double lastErrorR = 0;
-			int totalErrorL = 0;
-			int totalErrorR = 0;
-			int integralThresh = 2;
-			int integralLimit = 15;
+			double totalErrorL = 0;
+			double totalErrorR = 0;
+			int integralThresh = 5;
+			int integralLimit = 100;
 		 	double adjustmentL =0;
 			double adjustmentR = 0;
 			std::deque <double> que;
@@ -402,6 +433,7 @@ void armControl(){
 
 			// I - starts summing after a certain threshold and ensures total error doesn't become very large
 			if (fabs(errorL) < integralThresh){
+				totalErrorL += errorL;
 				if (totalErrorL > integralLimit)
 					totalErrorL = integralLimit;
 				else if (totalErrorL < -integralLimit)
@@ -411,13 +443,15 @@ void armControl(){
 				totalErrorL = 0;
 
 			if (fabs(errorR) < integralThresh){
+				totalErrorR += errorR;
 				if (totalErrorR > integralLimit)
 					totalErrorR = integralLimit;
 				else if (totalErrorR < -integralLimit)
 					totalErrorR = -integralLimit;
 			}
 			else
-				totalErrorR = 0;
+				totalErrorR =0;
+
 
 	/* Not sure what to do with the averaging.
 			if (que.size()<5){
@@ -434,20 +468,20 @@ void armControl(){
 			//speedR = map(errorR*Kp + (errorR-lastErrorR)*Kd + totalErrorR*Ki, -target, target, -MAX_SPEED, MAX_SPEED);
 			adjustmentL = errorL*Kp + (errorL-lastErrorL)*Kd + totalErrorL*Ki;
 			adjustmentR = errorR*Kp + (errorR-lastErrorR)*Kd + totalErrorR*Ki;
-			if (speedL > 127)
-				speedL = 127;
-			else
 			speedL += adjustmentL;
-			if (speedR >127)
+			speedR += adjustmentR;
+			if (speedL >= 127)
+				speedL = 127;
+			if (speedR >=127)
 				speedR = 127;
-			else
-				speedR += adjustmentR;
+
 			mtrL->move(speedL);
 			mtrR->move(speedR);
 
 			//debug
 			//std::cout << (*mtrL).get_position() << "	Left_E: " << errorL << "	Right_E: " << errorR <<  "	LPos: " << mtrL->get_position() << "	RPos: " << mtrR->get_position() << "	L Vel/R Vel: " << mtrL->get_actual_velocity() <<'/' << mtrR->get_actual_velocity() << '\n';
-			std::cout << "	Left_S: " << speedL << "	Right_S: " << speedR  << "	L_Deriv: "<< (errorL-lastErrorL) << "	R_Deriv: " << (errorR - lastErrorR) << "	L_Adjustment: " << adjustmentL << "	R_Adjustment: " << adjustmentR << "	L Vel/R Vel: "<< mtrL->get_actual_velocity() <<'/' << mtrR->get_actual_velocity() << '\n';
+			//std::cout << "	Left_S: " << speedL << "	Right_S: " << speedR  << "	L_Deriv: "<< (errorL-lastErrorL) << "	R_Deriv: " << (errorR - lastErrorR) << "	L_Adjustment: " << adjustmentL << "	R_Adjustment: " << adjustmentR << "	L Vel/R Vel: "<< mtrL->get_actual_velocity() <<'/' << mtrR->get_actual_velocity() << '\n';
+			std::cout << "	Left_S: " << speedL << "	Right_S: " << speedR  << "	L_Int: "<< totalErrorL << "	R_Int: " << totalErrorR << "	L_Adjustment: " << adjustmentL << "	R_Adjustment: " << adjustmentR << "	L Vel/R Vel: "<< mtrL->get_actual_velocity() <<'/' << mtrR->get_actual_velocity() << '\n';
 
 
 			// D
@@ -492,106 +526,6 @@ void opcontrol() {
 }
 */
 
-void flyWheel()
-{
-	R_FLY_8.set_encoder_units(pros::E_MOTOR_ENCODER_DEGREES);
-	L_FLY_10.set_encoder_units(pros::E_MOTOR_ENCODER_DEGREES);
-
-	R_FLY_8.tare_position();
-	L_FLY_10.tare_position();
-	R_FLY_8.set_zero_position(R_FLY_8.get_position());
-	L_FLY_10.set_zero_position(L_FLY_10.get_position());
-
-	pros::delay(1000);
-//	R_FLY_8.move_absolute(360,50);
-//	L_FLY_10.move_absolute(360,50);
-
-	R_FLY_8 = 40;
-	L_FLY_10 = 40;
-while (true){
-	std::cout << "L Pos: " << L_FLY_10.get_position() << "		R Pos: " << R_FLY_8.get_position() << "		L Vel/R Vel: " << L_FLY_10.get_actual_velocity() <<'/' << R_FLY_8.get_actual_velocity() << "\n";
-	pros::delay(1000);
-	}
-
 //driven gears  -> driving : 12 -> 60    12 -> 60
 // 1 motor rotation = 25 rotations wheel
 // 25 *360 = 90000 degrees
-
-
-}
-
-void flyWheelPID(int targetFlyWheelSpeed){
-	//Constants//
-	//R_FLY_8.set_encoder_units(pros::E_MOTOR_ENCODER_DEGREES);
-	//L_FLY_10.set_encoder_units(pros::E_MOTOR_ENCODER_DEGREES);
-
-	R_FLY_8.tare_position();
-	L_FLY_10.tare_position();
-	R_FLY_8.set_zero_position(R_FLY_8.get_position());
-	L_FLY_10.set_zero_position(L_FLY_10.get_position());
-pros::delay(1000);
-double kp = 0.1;
-double ki = 0.05;
-double kd = 0.07;
-
-int currentFlyWheelVoltage;
-L_FLY_10 = targetFlyWheelSpeed;
-R_FLY_8 = targetFlyWheelSpeed;
-//PID Variables Here//
-int currentVelocity = L_FLY_10.get_actual_velocity();
-int error = targetFlyWheelSpeed - currentVelocity;
-int lastError = 0;
-int totalError = 0;
-int integralActiveZone = 5;
-int integralLimit = 10;
-//int onTargetCount = 0;
-double finalAdjustment = error * kp; //add the rest of PID to this calculation
-
-//Temp Variable//
-int deltaTime = 0;
-
-while (true)
-{
-	 if	(master.get_digital(pros::E_CONTROLLER_DIGITAL_A)==1)
-	 	break;
-
-		currentVelocity = L_FLY_10.get_actual_velocity();
-
-		error = targetFlyWheelSpeed - currentVelocity;
-
-		if (error == 0)
-		{
-			lastError = 0;
-		}
-
-		if (abs(error) < integralActiveZone && error != 0)
-		{
-			totalError += error;
-			if (totalError > integralLimit)
-				totalError = integralLimit;
-			else if (totalError < -integralLimit)
-				totalError = -integralLimit;
-		}
-		else
-		{
-			totalError = 0;
-		}
-
-		finalAdjustment = ((error * kp) + (totalError * ki) + ((error - lastError) * kd));
-		currentFlyWheelVoltage += finalAdjustment;
-
-		if (currentFlyWheelVoltage > 127)
-		{
-			currentFlyWheelVoltage = 127;
-		}
-		else if (currentFlyWheelVoltage < 0)
-		{
-			currentFlyWheelVoltage = 0;
-		}
-		std::cout << "Error: "<<error << "	IntegralError: " << totalError << "	Adjustment+: " << finalAdjustment << " CurrentVoltage: " << currentFlyWheelVoltage <<"	L Pos: " << L_FLY_10.get_position() << "	R Pos: " << R_FLY_8.get_position() << "	L Vel/R Vel: " << L_FLY_10.get_actual_velocity() <<'/' << R_FLY_8.get_actual_velocity() << "\n";
-
-		L_FLY_10 = currentFlyWheelVoltage;
-    lastError = error;
-		pros::delay(10);
-}
-}

@@ -19,7 +19,9 @@
 #define LEFT_CLAW 20
 
 #define LIMIT_SWITCH_1 'E'
+#define LIMIT_SWITCH_2 'F'
 pros::ADIDigitalIn limit_switch1 (LIMIT_SWITCH_1);
+pros::ADIDigitalIn limit_switch2 (LIMIT_SWITCH_2);
 
 pros::Controller master(pros::E_CONTROLLER_MASTER);
 pros::ADIEncoder left_sensor (ENCODER_LEFT_TOP,ENCODER_LEFT_BOTTOM, true);

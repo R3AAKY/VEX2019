@@ -63,7 +63,12 @@ void opcontrol() {
   }
   f.close();
   */
-  flyWheelPID(45, &L_FLY_10, &R_FLY_8, 0.0042, 0, 1.1);
+//TUNED 0-40
+//  flyWheelPID(40, &L_FLY_10, &R_FLY_8, 0.0035, 0, 1.1);
+//flyWheelPID(50, &L_FLY_10, &R_FLY_8, 0.0035, 0.04, 0);
+//TUNED 90-120
+INTAKE_19 = 80;
+flyWheelPID(100,&L_FLY_10, &R_FLY_8, 0.122, 0, 1.1);
 
 /*
 L_FLY_10 = 40;
@@ -104,6 +109,8 @@ R_FLY_8 = 0;
  //L_CLAW20 = 100;
 //pros::Task drive_task(drivePID,(10,left_sensor,right_sensor,KP,KD,KI));
 //armControl();
+//armControl();
+//armControl();
 //flyWheelPID(40);
 /*
 L_CLAW20.tare_position();
@@ -112,5 +119,16 @@ while(true){
   std::cout<< "L:" << L_CLAW20.get_position() << "\n";
   pros::delay(1000);
 }
+
+/*
+while (true){
+std::cout<<limit_switch2.get_value() << '\n';
+pros::delay(1000);
+}
 */
 }
+
+
+
+//prosv5 upload --slot 1
+//prosv5 v5 rm-file slot_4.bin --erase-all

@@ -5,6 +5,7 @@
 
 extern pros::Controller master;
 extern pros::ADIDigitalIn limit_switch1;
+extern pros::ADIDigitalIn limit_switch2;
 extern pros::ADIEncoder left_sensor;
 extern pros::ADIEncoder right_sensor;
 extern pros::Motor left_mtr1;
@@ -56,8 +57,5 @@ void armPID(double target, pros::Motor *mtr, double Kp, double Ki, double Kd);
 void drivePID(double target, pros::Motor *mtr, pros::ADIEncoder *sensorL, pros::ADIEncoder *sensorR, double Kp, double Ki, double Kd);
 void resetArm();
 void armControl();
-void debug(pros::Motor *mtr, pros::ADIDigitalIn *swtch);
-void flyWheel();
-void flyWheelPID(int targetFlyWheelSpeed);
 void flyWheelPID(int target, pros::Motor *mtrL, pros::Motor *mtrR, double Kp, double Ki, double Kd);
 #endif //base.h
