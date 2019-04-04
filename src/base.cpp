@@ -1,5 +1,6 @@
 #include "main.h"
 #include "base.h"
+#include "stdio.h"
 #include <deque>
 int speed = 0; //initial motor speed
 double left_pos = 0;
@@ -8,7 +9,6 @@ double error = 0;
 double lastError = 0;
 double totalError = 0;
 double circ = pi*wheelDiameter;
-double robotCirc = 10.75*pi;
 
 int stage=1; //arm default stage
 
@@ -53,66 +53,11 @@ void setSpeed(int left_speed,int right_speed){
 
 // Found 90 degree turn to be 0.6875 rotations.
 // (false) for left turn, isRight (true) for right turn
-void turn90degrees (bool direction){
+void turn (double target){
 	// multiply by 2 because only one set of wheels is turning
-  double setpoint = inchesToDegrees(robotCirc/4); //quarter turn in degrees.
   readEncoders();
-	if (direction == isRight){
-		left_mtr1.set_reversed(false);
-		left_mtr2.set_reversed(false);
-		right_mtr1.set_reversed(false);
-		right_mtr2.set_reversed(false);
-		error = setpoint - left_pos;
-	}
-	else if (direction != isRight)
-	{
-		left_mtr1.set_reversed(true);
-		left_mtr2.set_reversed(true);
-		right_mtr1.set_reversed(true);
-		right_mtr2.set_reversed(true);
-		error = setpoint - right_pos;
-	}
+	drivePID(inchesToDegrees(target),true,&left_sensor,&right_sensor,1.1,0.2,2.75);
 
-	while(fabs(error)>turn_threshold){
-		if (direction == isRight)
-			error = setpoint - left_pos; // = setpoint - right_pos1 (in degrees)
-		else if (direction == !isRight)
-			error = setpoint - right_pos;
-
-		printEncoders();
-
-		if (fabs(error)<=turn_threshold)
-			break;
-
-			//speed = error*KP + (error-lastError)*KD + totalError*KI;
-		//rspeed = rerror*KP + (rerror-rlastError)*KD + rtotalError*KI;
-		if (direction == isRight)
-				speed = map(error*KP + (error-lastError)*KD + totalError*KI, -setpoint, setpoint, -MAX_SPEED,MAX_SPEED);
-		else if (direction != isRight)
-				speed = map(error*KPl + (error-lastError)*KDl + totalError*KIl, -setpoint, setpoint, -MAX_SPEED,MAX_SPEED);
-
-		setSpeed(speed,speed);
-
-		lastError = error;
-
-		if (fabs(error) < integralThreshold)
-			totalError += error;
-		pros::delay(10);
-	}
-	setSpeed(0,0);
-	lastError = 0;
-	totalError = 0;
-	readEncoders();
-	printEncoders();
-	pros::delay(100);
-	std::cout << "out of loop!" << "\n\n\n";
-	resetEncoders();
-	printEncoders();
-	left_mtr1.set_reversed(false);
-	left_mtr2.set_reversed(false);
-	right_mtr1.set_reversed(true);
-	right_mtr2.set_reversed(true);
-	pros::delay(10);
 }
 
 //The actual move straight function that runs the motors
@@ -121,10 +66,10 @@ void moveStraight(double distance_in_inches){
  	readEncoders();
   double	setpoint = inchesToDegrees(distance_in_inches);
 
-/* Setpoint, Error, Reference values are position values (in degrees for encoder units).
-	 Proporional Controller gain is used for modifying speed/velocity depending on how much error remains (larger error = lower speed required, vice-versa)
-*/
-//movePID(setpoint,left_mtr2)
+	/* Setpoint, Error, Reference values are position values (in degrees for encoder units).
+		 Proporional Controller gain is used for modifying speed/velocity depending on how much error remains (larger error = lower speed required, vice-versa)
+	*/
+	//movePID(setpoint,left_mtr2)
 	while(true){
 		error = setpoint - left_pos; // = setpoint - right_pos1 (in degrees)
 		printEncoders();
@@ -182,26 +127,28 @@ void armControl(){
 				pros::delay(2);
 				}
 				L_CLAW20 = 0;
-*/
+				*/
 			stage = 2;
 			break;
 
 		}
 		case 2:{
-			//rotationDegrees = -(36/12)*120; // required encoder degrees from stage 1 position to stage 2;
-			//L_CLAW20.move_relative(rotationDegrees, 100); // Moves rotationTicks forward
-			//armPID(rotationTicks, &L_CLAW20, 1, 0, 0);
-			/*arm_rotationTicks = (84/12)*90/2 ;//divided by 2 because two motors
-			L_ARM_9.move_relative(arm_rotationTicks, 100);
-			R_ARM_7.move_relative(arm_rotationTicks, 100);
-			while (!((fabs(L_CLAW20.get_position()) < rotationTicks+2)
-			&& (fabs(R_ARM_7.get_position()) < arm_rotationTicks+2)
-			&& (fabs(L_ARM_9.get_position()) < arm_rotationTicks+2))){
-				// Continue running this loop as long as the motor is not within +-2 units of its goal
-				std::cout << "Claw: " << L_CLAW20.get_position() << "		R_Arm: " << R_ARM_7.get_position() << "		L_Arm: " << L_ARM_9.get_position() << '\n';
-				pros::delay(2);
-			}
-			*/
+			//	rotationDegrees = -(36/12)*120; // required encoder degrees from stage 1 position to stage 2;
+				//L_CLAW20.move_relative(405, 100); // Moves rotationTicks forward
+				//pros::delay(500);
+				//armPID(rotationTicks, &L_CLAW20, 1, 0, 0);
+				/*arm_rotationTicks = (84/12)*90/2 ;//divided by 2 because two motors
+				L_ARM_9.move_relative(arm_rotationTicks, 100);
+				R_ARM_7.move_relative(arm_rotationTicks, 100);
+				while (!((fabs(L_CLAW20.get_position()) < rotationTicks+2)
+				&& (fabs(R_ARM_7.get_position()) < arm_rotationTicks+2)
+				&& (fabs(L_ARM_9.get_position()) < arm_rotationTicks+2))){
+					// Continue running this loop as long as the motor is not within +-2 units of its goal
+					std::cout << "Claw: " << L_CLAW20.get_position() << "		R_Arm: " << R_ARM_7.get_position() << "		L_Arm: " << L_ARM_9.get_position() << '\n';
+					pros::delay(2);
+				}
+				*/
+
 
 				L_ARM_9 = 110;
 				R_ARM_7 = 110;
@@ -217,23 +164,24 @@ void armControl(){
 			break;
 		}
 		case 3:{
-			rotationDegrees = -(36/12)*160;
-			armPID(rotationDegrees, &L_CLAW20, 1.5,0,0);
-			/*L_CLAW20.move_relative(rotationTicks, 100); // Moves rotationTicks forward
+					//	rotationDegrees = (36/12)*170;
+					//	armPID(rotationDegrees, &L_CLAW20, 1.5,0,0);
 
-			arm_rotationTicks = -(84/12)*90/2 ;//divided by 2 because two motors
-			L_ARM_9.move_relative(arm_rotationTicks, 100);
-			R_ARM_7.move_relative(arm_rotationTicks, 100);
-			while (!((fabs(R_ARM_7.get_position()) < arm_rotationTicks+2) && (fabs(L_ARM_9.get_position()) < arm_rotationTicks+2))){
-				// Continue running this loop as long as the motor is not within +-2 units of its goal
-				std::cout << "Claw: " << L_CLAW20.get_position() << "		R_Arm: " << R_ARM_7.get_position() << "		L_Arm: " << L_ARM_9.get_position() << '\n';
-				pros::delay(2);
-			}
+						 // Moves rotationTicks forward
+			/*
+						arm_rotationTicks = -(84/12)*90/2 ;//divided by 2 because two motors
+						L_ARM_9.move_relative(arm_rotationTicks, 100);
+						R_ARM_7.move_relative(arm_rotationTicks, 100);
+						while (!((fabs(R_ARM_7.get_position()) < arm_rotationTicks+2) && (fabs(L_ARM_9.get_position()) < arm_rotationTicks+2))){
+							// Continue running this loop as long as the motor is not within +-2 units of its goal
+							std::cout << "Claw: " << L_CLAW20.get_position() << "		R_Arm: " << R_ARM_7.get_position() << "		L_Arm: " << L_ARM_9.get_position() << '\n';
+							pros::delay(2);
+						}
 
-			std::cout <<"L: " << L_ARM_9.get_position() << "		R: " << R_ARM_7.get_position() << "\n";
-			L_ARM_9 = 0;
-			R_ARM_7 = 0;
-*/
+						std::cout <<"L: " << L_ARM_9.get_position() << "		R: " << R_ARM_7.get_position() << "\n";
+						L_ARM_9 = 0;
+						R_ARM_7 = 0;
+			*/
 
 			L_ARM_9 = -80;
 			R_ARM_7 = -80;
@@ -322,9 +270,10 @@ void armControl(){
 			std::cout << "E: " << error << "	Pos: " << mtr->get_position() << '\n';
 			pros::delay(100);
 		}
+
 		mtr->move(0);
-		if (rev)
-		{
+		if (rev==true)
+		{//unreverse
 		 	if (mtr->is_reversed())
 				mtr->set_reversed(false);
 			else
@@ -333,14 +282,14 @@ void armControl(){
 		}
 		mtr->tare_position();
 		mtr->set_zero_position(mtr->get_position());
-		
+
 		pros::delay(1000);
 		std::cout << "FINAL READINGS" << '\n';
 		std::cout <<"E: " << error << "	Average: " << average << "	Pos: " << mtr->get_position() << '\n';
 	}
 
 	//Using Quad Encoders
-	void drivePID(double target, pros::ADIEncoder *sensorL, pros::ADIEncoder *sensorR, double Kp, double Ki, double Kd){
+	void drivePID(double target, bool isTurn, pros::ADIEncoder *sensorL, pros::ADIEncoder *sensorR, double Kp, double Ki, double Kd){
 			double errorL, errorR, speedL, speedR, sum;
 			int adjustmentL =0;
 			int adjustmentR = 0;
@@ -355,27 +304,66 @@ void armControl(){
 			sensorL->reset();
 			sensorR->reset();
 			pros::delay(1000);
+			if (isTurn)
+			{
+				if(target>0)//positve target = right turn, negative target = left turn
+				{
+						//reverse right side motors
+						if (right_mtr1.is_reversed() && right_mtr2.is_reversed()){
+							right_mtr1.set_reversed(false);
+							right_mtr2.set_reversed(false);
+						}
+						else{
+							right_mtr1.set_reversed(true);
+							right_mtr2.set_reversed(true);
+						}
+				}
+				else{
+						//reverse left side motors
+						if (left_mtr1.is_reversed() && left_mtr2.is_reversed()){
+							left_mtr1.set_reversed(false);
+							left_mtr2.set_reversed(false);
+						}
+						else{
+							left_mtr1.set_reversed(true);
+							left_mtr2.set_reversed(true);
+						}
+						target = -target;
+				}
 
-			while (!((fabs(errorL)< 1) && (fabs(errorR) < 1))) 	 {
+			}
+			errorL = target - sensorL->get_value();
+			errorR = target + sensorR->get_value();
+			std::cout << "Left_E: " << errorL << "	Right_E: " << errorR << "	LPos: " << sensorL->get_value() << "	RPos: " << sensorR->get_value() << '\n';
+
+			while (fabs(errorL)> 2 | fabs(errorR)>2) 	 {
 //		while(!(average < 3 && average > -3)){
 
 			// P
 			errorL = target - sensorL->get_value();
-			errorR = target - sensorR->get_value();
+			errorR = target + sensorR->get_value();
 
-			// D
-			lastErrorL = errorL;
-			lastErrorR = errorR;
 
 			// I - starts summing after a certain threshold and ensures total error doesn't become very large
-			if (fabs(error) < integralThreshold){
+			if (fabs(errorL) < integralThreshold){
+				totalErrorL += errorL;
 				if (totalErrorL > integralLimit)
-					totalError = integralLimit;
+					totalErrorL = integralLimit;
 				else if (totalErrorL < -integralLimit)
 					totalErrorL = -integralLimit;
 			}
 			else
-				totalError = 0;
+				totalErrorL = 0;
+
+			if (fabs(errorR) < integralThreshold){
+				totalErrorR += errorR;
+				if (totalErrorR > integralLimit)
+					totalErrorR = integralLimit;
+				else if (totalErrorR < -integralLimit)
+					totalErrorR = -integralLimit;
+			}
+			else
+				totalErrorR =0;
 
 /*Not sure what to do with the averaging.
 			if (que.size()<5){
@@ -392,11 +380,18 @@ void armControl(){
 			speedR = map(errorR*Kp + (errorR-lastErrorR)*Kd + totalErrorR*Ki, -target, target, -MAX_SPEED, MAX_SPEED);
 			setSpeed(speedL,speedR);
 
+			// D
+			lastErrorL = errorL;
+			lastErrorR = errorR;
 			//debug
-			std::cout << "E: " << error << "	Average: " << average << "	LPos: " << sensorL->get_value() << "	RPos: " << sensorR->get_value() << '\n';
+			std::cout << "Left_E: " << errorL << "	Right_E: " << errorR << "	LPos: " << sensorL->get_value() << "	RPos: " << sensorR->get_value() << '\n';
 			pros::delay(10);
 		}
 		setSpeed(0,0);
+		left_mtr1.set_reversed(false);
+		left_mtr2.set_reversed(false);
+		right_mtr1.set_reversed(true);
+		right_mtr2.set_reversed(true);
 		pros::delay(100);
 		std::cout << "FINAL READINGS" << '\n';
 		std::cout << "E: " << error << "	Average: " << average << "	LPos: " << sensorL->get_value() << "	RPos: " << sensorR->get_value() << '\n';
@@ -422,6 +417,10 @@ void armControl(){
 			pros::delay(550);
 			speedL = target;
 			speedR = target;
+
+			std::FILE * f = fopen("/usd/data.dat","w");
+			int count = 1;
+			int delayTime = 5;
 			while (true) 	 {
 		//		if	(master.get_digital(pros::E_CONTROLLER_DIGITAL_A)!=0)
 		 	// 		break;
@@ -489,7 +488,15 @@ void armControl(){
 			lastErrorR = errorR;
 
 			pros::delay(250);
+			if (count==120)
+				break;
+			else
+			{
+				fprintf(f,"%d   %f    %f\n",count*250, mtrL->get_actual_velocity(), mtrR->get_actual_velocity());
+				count++;
+			}
 		}
+		fclose(f);
 		mtrL->move (0);
 		mtrR->move(0);
 		pros::delay(100);

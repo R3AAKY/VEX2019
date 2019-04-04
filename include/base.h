@@ -42,19 +42,19 @@ extern double error;
 #define integralThreshold 40
 #define degreesPerRotation 360
 #define wheelDiameter 3.125
-#define isRight true
+#define TURN_90 10.75*pi/4
 
 void printEncoders();
 double inchesToDegrees(double inches);
 double degreesToInches(double degrees);
-void turn90degrees(bool direction);
+void turn(double target);
 void moveStraight(double distance_in_inches);
 void setSpeed(int left_speed,int right_speed);
 double map(double x, double in_min, double in_max, double out_min, double out_max);
 void readEncoders();
 void resetEncoders();
 void armPID(double target, pros::Motor *mtr, double Kp, double Ki, double Kd);
-void drivePID(double target, pros::Motor *mtr, pros::ADIEncoder *sensorL, pros::ADIEncoder *sensorR, double Kp, double Ki, double Kd);
+void drivePID(double target, bool isTurn, pros::ADIEncoder *sensorL, pros::ADIEncoder *sensorR, double Kp, double Ki, double Kd);
 void resetArm();
 void armControl();
 void flyWheelPID(int target, pros::Motor *mtrL, pros::Motor *mtrR, double Kp, double Ki, double Kd);

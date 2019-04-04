@@ -1,6 +1,6 @@
 #include "main.h"
 #include "base.h"
-#include <fstream>
+#include <stdio.h>
 
 /**
  * Runs the operator control code. This function will be started in its own task
@@ -47,7 +47,20 @@
 		pros::delay(20);
 	}
 */
-
+/*
+void print2SD(){
+  std::FILE * f;
+  f = fopen("\usd\data.dat",'w');
+  int count = 1;
+  int delayTime = 5;
+  while (count<=6000)
+  {
+    pros::delay(delayTime);
+    fprintf(f,"%d   %d    %d",count*delay, mtrL->get_actual_velocity(), mtrR->get_actual_velocity());
+    count++;
+  }
+}
+*/
 void opcontrol() {
 /*
   std::ofstream f;
@@ -67,8 +80,8 @@ void opcontrol() {
 //  flyWheelPID(40, &L_FLY_10, &R_FLY_8, 0.0035, 0, 1.1);
 //flyWheelPID(50, &L_FLY_10, &R_FLY_8, 0.0035, 0.04, 0);
 //TUNED 90-120
-INTAKE_19 = 80;
-flyWheelPID(100,&L_FLY_10, &R_FLY_8, 0.122, 0, 1.1);
+//INTAKE_19 = 80;
+//flyWheelPID(100,&L_FLY_10, &R_FLY_8, 0.122, 0, 1.1);
 
 /*
 L_FLY_10 = 40;
@@ -82,6 +95,29 @@ pros::delay(10);
 L_FLY_10 = 0;
 R_FLY_8 = 0;
 */
+moveStraight(10);
+turn(TURN_90);
+//turn(-TURN_90);
+// while(true)
+// {
+//   std::cout << left_sensor.get_value() << '\n';
+//   if (left_mtr1.is_reversed()==false)
+//   {
+//     std::cout << left_mtr1.is_reversed() <<"  FALSE!" <<'\n';
+//   left_mtr1.set_reversed(true);
+//   left_mtr1 = 30;
+//   }
+//   else{
+//     std::cout << left_mtr1.is_reversed() <<"  TRUE!" <<'\n';
+//     left_mtr1.set_reversed(false);
+//     left_mtr1 = 30;
+//   }
+//
+//   pros::delay(1500);
+//
+//
+// }
+
  /*
  while (true) {
 		int left = master.get_analog(ANALOG_LEFT_Y);
@@ -111,14 +147,16 @@ R_FLY_8 = 0;
 //armControl();
 //armControl();
 //armControl();
+
+	//L_CLAW20.move_relative(370,50);
+
 //flyWheelPID(40);
-/*
-L_CLAW20.tare_position();
-L_CLAW20.set_encoder_units(pros::E_MOTOR_ENCODER_DEGREES);
-while(true){
-  std::cout<< "L:" << L_CLAW20.get_position() << "\n";
-  pros::delay(1000);
-}
+// L_CLAW20.tare_position();
+// L_CLAW20.set_encoder_units(pros::E_MOTOR_ENCODER_DEGREES);
+// while(true){
+//   std::cout<< "L:" << L_CLAW20.get_position() << "\n";
+//   pros::delay(100);
+// }
 
 /*
 while (true){
@@ -126,6 +164,7 @@ std::cout<<limit_switch2.get_value() << '\n';
 pros::delay(1000);
 }
 */
+
 }
 
 
