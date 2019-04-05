@@ -16,7 +16,7 @@
 #define INTAKE 19
 #define RIGHT_ARM 7
 #define LEFT_ARM 9
-#define LEFT_CLAW 20
+#define CLAW 20
 
 #define LIMIT_SWITCH_1 'E'
 #define LIMIT_SWITCH_2 'F'
@@ -31,14 +31,14 @@ pros::Motor left_mtr2(LEFT_MOTOR_BACK, false);
 pros::Motor right_mtr1(RIGHT_MOTOR_FRONT, true);
 pros::Motor right_mtr2(RIGHT_MOTOR_BACK, true);
 
-pros::Motor R_FLY_8 (R_FLY,true);
-pros::Motor L_FLY_10 (L_FLY);
+pros::Motor right_flywheel (R_FLY,true);
+pros::Motor left_flywheel (L_FLY);
 
-pros::Motor INTAKE_19(INTAKE,true);
+pros::Motor intake(INTAKE,true);
 
-pros::Motor R_ARM_7(RIGHT_ARM, true);
-pros::Motor L_ARM_9(LEFT_ARM,false);
-pros::Motor L_CLAW20(LEFT_CLAW, true);
+pros::Motor right_arm(RIGHT_ARM, true);
+pros::Motor left_arm(LEFT_ARM,false);
+pros::Motor claw(CLAW, true);
 
 pros::ADIGyro gyro('H');
 
@@ -48,8 +48,8 @@ void initDrive(){
 	right_mtr1.set_brake_mode(pros::E_MOTOR_BRAKE_BRAKE);
 	right_mtr2.set_brake_mode(pros::E_MOTOR_BRAKE_BRAKE);
 
-	R_FLY_8.set_brake_mode(pros::E_MOTOR_BRAKE_BRAKE);
-	L_FLY_10.set_brake_mode(pros::E_MOTOR_BRAKE_BRAKE);
+	right_flywheel.set_brake_mode(pros::E_MOTOR_BRAKE_BRAKE);
+	left_flywheel.set_brake_mode(pros::E_MOTOR_BRAKE_BRAKE);
 
 	INTAKE_19.set_brake_mode(pros::E_MOTOR_BRAKE_BRAKE);
 

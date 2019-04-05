@@ -3,8 +3,6 @@
 #include "stdio.h"
 #include <deque>
 int speed = 0; //initial motor speed
-double left_pos = 0;
-double right_pos = 0;
 double error = 0;
 double lastError = 0;
 double totalError = 0;
@@ -22,18 +20,8 @@ double degreesToInches(double degrees)
 	return (degrees/degreesPerRotation)*circ;
 }
 
-void readEncoders(){
-	left_pos = left_sensor.get_value();
-	right_pos = right_sensor.get_value();
-}
-
-void printEncoders(){
-	std::cout << "error: " << error <<"	left pos: " << left_pos << "	right pos: " << right_pos << "	angle: " << gyro.get_value() << "\n";
-}
 
 void resetEncoders(){
-	left_pos = 0;
-	right_pos = 0;
   left_sensor.reset(); // The encoder is now zero again
 	right_sensor.reset(); // The encoder is now zero again
 	pros::delay(1500);
@@ -53,22 +41,20 @@ void setSpeed(int left_speed,int right_speed){
 
 // Found 90 degree turn to be 0.6875 rotations.
 // (false) for left turn, isRight (true) for right turn
-void turn (double target){
+void turn (double angle_in_inches){
 	// multiply by 2 because only one set of wheels is turning
-  readEncoders();
-	drivePID(inchesToDegrees(target),true,&left_sensor,&right_sensor,1.1,0.2,2.75);
+	drivePID(inchesToDegrees(angle_in_inches),true,&left_sensor,&right_sensor,1.1,0.2,2.75);
 
 }
 
 //The actual move straight function that runs the motors
 void moveStraight(double distance_in_inches){
 	resetEncoders();
- 	readEncoders();
+	drivePID(inchesToDegrees(distance_in_inches),false,&left_sensor,&right_sensor,1.1,0.2,2.75);
+
+	/*
   double	setpoint = inchesToDegrees(distance_in_inches);
 
-	/* Setpoint, Error, Reference values are position values (in degrees for encoder units).
-		 Proporional Controller gain is used for modifying speed/velocity depending on how much error remains (larger error = lower speed required, vice-versa)
-	*/
 	//movePID(setpoint,left_mtr2)
 	while(true){
 		error = setpoint - left_pos; // = setpoint - right_pos1 (in degrees)
@@ -92,18 +78,16 @@ void moveStraight(double distance_in_inches){
 
 	resetEncoders();
 	pros::delay(10);
+	*/
 }
 
 void resetArm(){
-	R_ARM_7.tare_position();
-	L_ARM_9.tare_position();
-	L_CLAW20.tare_position();
-	R_ARM_7.set_zero_position(R_ARM_7.get_position());
-	L_ARM_9.set_zero_position(L_ARM_9.get_position());
-	L_CLAW20.set_zero_position(L_CLAW20.get_position());
-	R_ARM_7.set_encoder_units(pros::E_MOTOR_ENCODER_DEGREES);
-	L_ARM_9.set_encoder_units(pros::E_MOTOR_ENCODER_DEGREES);
-	L_CLAW20.set_encoder_units(pros::E_MOTOR_ENCODER_DEGREES);
+	right_arm.tare_position();
+	left_arm.tare_position();
+	claw.tare_position();
+	right_arm.set_zero_position(right_arm.get_position());
+	left_arm.set_zero_position(left_arm.get_position());
+	claw.set_zero_position(claw.get_position());
 	pros::delay(1000);
 }
 
@@ -118,15 +102,15 @@ void armControl(){
 			//go to stage 2
 			//rotationTicks = (36/12)*270; //gear ratio driven/driver = 3, 270 degree rotation
 			rotationDegrees = -765;
-			armPID(rotationDegrees, &L_CLAW20,1,0,0);
+			armPID(rotationDegrees, &claw,1,0,0);
 
 
 			/* WITH LIMIT SWITCH
-				L_CLAW20 = 30;
+				claw = 30;
 				while (limit_switch1.get_value()!= 1){
 				pros::delay(2);
 				}
-				L_CLAW20 = 0;
+				claw = 0;
 				*/
 			stage = 2;
 			break;
@@ -134,66 +118,66 @@ void armControl(){
 		}
 		case 2:{
 			//	rotationDegrees = -(36/12)*120; // required encoder degrees from stage 1 position to stage 2;
-				//L_CLAW20.move_relative(405, 100); // Moves rotationTicks forward
+				//claw.move_relative(405, 100); // Moves rotationTicks forward
 				//pros::delay(500);
-				//armPID(rotationTicks, &L_CLAW20, 1, 0, 0);
+				//armPID(rotationTicks, &claw, 1, 0, 0);
 				/*arm_rotationTicks = (84/12)*90/2 ;//divided by 2 because two motors
-				L_ARM_9.move_relative(arm_rotationTicks, 100);
-				R_ARM_7.move_relative(arm_rotationTicks, 100);
-				while (!((fabs(L_CLAW20.get_position()) < rotationTicks+2)
-				&& (fabs(R_ARM_7.get_position()) < arm_rotationTicks+2)
-				&& (fabs(L_ARM_9.get_position()) < arm_rotationTicks+2))){
+				left_arm.move_relative(arm_rotationTicks, 100);
+				right_arm.move_relative(arm_rotationTicks, 100);
+				while (!((fabs(claw.get_position()) < rotationTicks+2)
+				&& (fabs(right_arm.get_position()) < arm_rotationTicks+2)
+				&& (fabs(left_arm.get_position()) < arm_rotationTicks+2))){
 					// Continue running this loop as long as the motor is not within +-2 units of its goal
-					std::cout << "Claw: " << L_CLAW20.get_position() << "		R_Arm: " << R_ARM_7.get_position() << "		L_Arm: " << L_ARM_9.get_position() << '\n';
+					std::cout << "Claw: " << claw.get_position() << "		R_Arm: " << right_arm.get_position() << "		L_Arm: " << left_arm.get_position() << '\n';
 					pros::delay(2);
 				}
 				*/
 
 
-				L_ARM_9 = 110;
-				R_ARM_7 = 110;
+				left_arm = 110;
+				right_arm = 110;
 				while (limit_switch1.get_value()!= 1){
 				pros::delay(2);
 				}
-				std::cout <<"L: " << L_ARM_9.get_position() << "		R: " << R_ARM_7.get_position() << "\n";
-				L_ARM_9 = 0;
-				R_ARM_7 = 0;
+				std::cout <<"L: " << left_arm.get_position() << "		R: " << right_arm.get_position() << "\n";
+				left_arm = 0;
+				right_arm = 0;
 
 			stage = 3;
-				std::cout <<"L: " << L_ARM_9.get_position() << "		R: " << R_ARM_7.get_position() << "\n";
+				std::cout <<"L: " << left_arm.get_position() << "		R: " << right_arm.get_position() << "\n";
 			break;
 		}
 		case 3:{
 					//	rotationDegrees = (36/12)*170;
-					//	armPID(rotationDegrees, &L_CLAW20, 1.5,0,0);
+					//	armPID(rotationDegrees, &claw, 1.5,0,0);
 
 						 // Moves rotationTicks forward
 			/*
 						arm_rotationTicks = -(84/12)*90/2 ;//divided by 2 because two motors
-						L_ARM_9.move_relative(arm_rotationTicks, 100);
-						R_ARM_7.move_relative(arm_rotationTicks, 100);
-						while (!((fabs(R_ARM_7.get_position()) < arm_rotationTicks+2) && (fabs(L_ARM_9.get_position()) < arm_rotationTicks+2))){
+						left_arm.move_relative(arm_rotationTicks, 100);
+						right_arm.move_relative(arm_rotationTicks, 100);
+						while (!((fabs(right_arm.get_position()) < arm_rotationTicks+2) && (fabs(left_arm.get_position()) < arm_rotationTicks+2))){
 							// Continue running this loop as long as the motor is not within +-2 units of its goal
-							std::cout << "Claw: " << L_CLAW20.get_position() << "		R_Arm: " << R_ARM_7.get_position() << "		L_Arm: " << L_ARM_9.get_position() << '\n';
+							std::cout << "Claw: " << claw.get_position() << "		R_Arm: " << right_arm.get_position() << "		L_Arm: " << left_arm.get_position() << '\n';
 							pros::delay(2);
 						}
 
-						std::cout <<"L: " << L_ARM_9.get_position() << "		R: " << R_ARM_7.get_position() << "\n";
-						L_ARM_9 = 0;
-						R_ARM_7 = 0;
+						std::cout <<"L: " << left_arm.get_position() << "		R: " << right_arm.get_position() << "\n";
+						left_arm = 0;
+						right_arm = 0;
 			*/
 
-			L_ARM_9 = -80;
-			R_ARM_7 = -80;
+			left_arm = -80;
+			right_arm = -80;
 				while (limit_switch2.get_value()!= 1){
 				pros::delay(2);
 				}
-				std::cout <<"L: " << L_ARM_9.get_position() << "		R: " << R_ARM_7.get_position() << "\n";
-				L_ARM_9 = 0;
-				R_ARM_7 = 0;
+				std::cout <<"L: " << left_arm.get_position() << "		R: " << right_arm.get_position() << "\n";
+				left_arm = 0;
+				right_arm = 0;
 
 			stage = 4;
-				std::cout <<"L: " << L_ARM_9.get_position() << "		R: " << R_ARM_7.get_position() << "\n";
+				std::cout <<"L: " << left_arm.get_position() << "		R: " << right_arm.get_position() << "\n";
 			break;
 		}
 		case 4:{
