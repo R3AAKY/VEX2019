@@ -24,8 +24,7 @@
  } drive_arg;
 */
 
-void controller()
-{
+void controller(){
   bool shooterOn = false;
 	int shooterSpeed = 100;
   while (true) {
@@ -91,11 +90,11 @@ void multitask_test(){
 
 void opcontrol() {
 // TUNED 0-40
-//  flyWheelPID(40, &left_flywheel, &right_flywheel, 0.0035, 0, 1.1);
-//flyWheelPID(50, &left_flywheel, &right_flywheel, 0.0035, 0.04, 0);
+//  flywheelPID(40, &left_flywheel, &right_flywheel, 0.0035, 0, 1.1);
+//flywheelPID(50, &left_flywheel, &right_flywheel, 0.0035, 0.04, 0);
 //TUNED 90-120
 //INTAKE_19 = 80;
-//flyWheelPID(100,&left_flywheel, &right_flywheel, 0.122, 0, 1.1);
+//flywheelPID(100,&left_flywheel, &right_flywheel, 0.122, 0, 1.1);
 
 /*
 left_flywheel = 40;

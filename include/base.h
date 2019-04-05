@@ -51,10 +51,41 @@ void moveStraight(double distance_in_inches);
 void setSpeed(int left_speed,int right_speed);
 double map(double x, double in_min, double in_max, double out_min, double out_max);
 void resetEncoders();
-void armPID(double target, pros::Motor *mtr, double Kp, double Ki, double Kd);
-void drivePID(double target, bool isTurn, pros::ADIEncoder *sensorL, pros::ADIEncoder *sensorR, double Kp, double Ki, double Kd);
 void resetArm();
 void armControl();
-void flyWheelPID(int target, pros::Motor *mtrL, pros::Motor *mtrR, double Kp, double Ki, double Kd);
+
+// These use multiple parameters.
+void drivePID(double target, bool isTurn, pros::ADIEncoder *sensorL, pros::ADIEncoder *sensorR, double Kp, double Ki, double Kd);
+void armPID(double target, pros::Motor *mtr, double Kp, double Ki, double Kd);
+void flywheelPID(double target, pros::Motor *mtrL, pros::Motor *mtrR, double Kp, double Ki, double Kd);
+
+typedef struct arm_arg{
+  double target;
+  pros::Motor *mtr;
+  double Kp, Kd, Ki;
+} arm_arg;
+
+typedef struct drive_arg{
+  double target;
+  bool isTurn;
+  pros::ADIEncoder *sensorL;
+  pros::ADIEncoder *sensorR;
+  double Kp, Kd, Ki;
+} drive_arg;
+
+typedef struct flywheel_arg{
+  double target;
+  pros::Motor *mtrL;
+  pros::Motor *mtrR;
+  double Kp, Kd, Ki;
+} flywheel_arg;
+
+// These use struct arguments to represent multiple parameters
+void drivePID(void* d_arg);
+void armPID(void* a_arg);
+void flywheelPID(void* f_arg);
+
+void runFlywheel(double target);
+void stopFlywheel();
 
 #endif //base.h

@@ -22,6 +22,7 @@
 #define LIMIT_SWITCH_2 'F'
 pros::ADIDigitalIn limit_switch1 (LIMIT_SWITCH_1);
 pros::ADIDigitalIn limit_switch2 (LIMIT_SWITCH_2);
+uint32_t now = pros::millis();
 
 pros::Controller master(pros::E_CONTROLLER_MASTER);
 pros::ADIEncoder left_sensor (ENCODER_LEFT_TOP,ENCODER_LEFT_BOTTOM, true);
@@ -51,14 +52,14 @@ void initDrive(){
 	right_flywheel.set_brake_mode(pros::E_MOTOR_BRAKE_BRAKE);
 	left_flywheel.set_brake_mode(pros::E_MOTOR_BRAKE_BRAKE);
 
-	INTAKE_19.set_brake_mode(pros::E_MOTOR_BRAKE_BRAKE);
+	intake.set_brake_mode(pros::E_MOTOR_BRAKE_BRAKE);
 
-	R_ARM_7.set_brake_mode(pros::E_MOTOR_BRAKE_BRAKE);
-	L_ARM_9.set_brake_mode(pros::E_MOTOR_BRAKE_BRAKE);
-	L_CLAW20.set_brake_mode(pros::E_MOTOR_BRAKE_BRAKE);
-	R_ARM_7.set_encoder_units(pros::E_MOTOR_ENCODER_DEGREES);
-	L_ARM_9.set_encoder_units(pros::E_MOTOR_ENCODER_DEGREES);
-	L_CLAW20.set_encoder_units(pros::E_MOTOR_ENCODER_DEGREES);
+	right_arm.set_brake_mode(pros::E_MOTOR_BRAKE_BRAKE);
+	left_arm.set_brake_mode(pros::E_MOTOR_BRAKE_BRAKE);
+	claw.set_brake_mode(pros::E_MOTOR_BRAKE_BRAKE);
+	right_arm.set_encoder_units(pros::E_MOTOR_ENCODER_DEGREES);
+	left_arm.set_encoder_units(pros::E_MOTOR_ENCODER_DEGREES);
+	claw.set_encoder_units(pros::E_MOTOR_ENCODER_DEGREES);
 }
 
 void on_center_button() {
@@ -83,7 +84,7 @@ void initialize() {
 	initDrive();
 	resetEncoders();
 	gyro.reset();
-	pros::delay(1500);
+	pros::delay(1000);
 }
 
 /**
