@@ -7,9 +7,11 @@ double error = 0;
 double lastError = 0;
 double totalError = 0;
 double circ = pi*wheelDiameter;
+
+//pros::Mutex mutex = mutex();
 pros::task_t raise_claw;
 pros::task_t fly;
-int stage=1; //arm default stage
+int stage=2; //arm default stage
 
 double inchesToDegrees(double inches){
 	return (inches/circ)*degreesPerRotation;
@@ -118,7 +120,7 @@ void armPID(double target,pros::Motor *mtr, double Kp, double Ki, double Kd){
 		pros::delay(100);
 	}
 
-	mtr->move(0);
+	//mtr->move(0);
 	if (rev==true)
 	{//unreverse
 	 	if (mtr->is_reversed())
@@ -134,8 +136,9 @@ void armPID(double target,pros::Motor *mtr, double Kp, double Ki, double Kd){
 	std::cout << "FINAL READINGS" << '\n';
 	std::cout <<"E: " << error << "	Average: " << average << "	Pos: " << mtr->get_position() << '\n';
 }
+
 void drivePID(double target, bool isTurn, pros::ADIEncoder *sensorL, pros::ADIEncoder *sensorR, double Kp, double Ki, double Kd){
-		double errorL, errorR, speedL, speedR, sum;
+		double errorL, errorR, speedL, speedR, sum,targetL,targetR;
 		int adjustmentL =0;
 		int adjustmentR = 0;
 		double average = 0;
@@ -153,40 +156,28 @@ void drivePID(double target, bool isTurn, pros::ADIEncoder *sensorL, pros::ADIEn
 		{
 			if(target>0)//positve target = right turn, negative target = left turn
 			{
-					//reverse right side motors
-					if (right_mtr1.is_reversed() && right_mtr2.is_reversed()){
-						right_mtr1.set_reversed(false);
-						right_mtr2.set_reversed(false);
-					}
-					else{
-						right_mtr1.set_reversed(true);
-						right_mtr2.set_reversed(true);
-					}
+					targetL = target;
+					targetR = -target;
 			}
 			else{
-					//reverse left side motors
-					if (left_mtr1.is_reversed() && left_mtr2.is_reversed()){
-						left_mtr1.set_reversed(false);
-						left_mtr2.set_reversed(false);
-					}
-					else{
-						left_mtr1.set_reversed(true);
-						left_mtr2.set_reversed(true);
-					}
-					target = -target;
+					targetL = -target;
+					targetR = target;
 			}
-
 		}
-		errorL = target - sensorL->get_value();
-		errorR = target + sensorR->get_value();
+		else{
+			targetL = target;
+			targetR = target;
+		}
+		errorL = targetL - sensorL->get_value();
+		errorR = targetR - sensorR->get_value();
 		std::cout << "Left_E: " << errorL << "	Right_E: " << errorR << "	LPos: " << sensorL->get_value() << "	RPos: " << sensorR->get_value() << '\n';
 
 		while (fabs(errorL)> 2 | fabs(errorR)>2) 	 {
 		//		while(!(average < 3 && average > -3)){
 
 		// P
-		errorL = target - sensorL->get_value();
-		errorR = target + sensorR->get_value();
+		errorL = targetL - sensorL->get_value();
+		errorR = targetR - sensorR->get_value();
 
 
 		// I - starts summing after a certain threshold and ensures total error doesn't become very large
@@ -221,9 +212,16 @@ void drivePID(double target, bool isTurn, pros::ADIEncoder *sensorL, pros::ADIEn
 					}
 					average = sum/(size(que));
 		*/
-		speedL = map(errorL*Kp + (errorL-lastErrorL)*Kd + totalErrorL*Ki, -target, target, -MAX_SPEED, MAX_SPEED);
-		speedR = map(errorR*Kp + (errorR-lastErrorR)*Kd + totalErrorR*Ki, -target, target, -MAX_SPEED, MAX_SPEED);
-		setSpeed(speedL,speedR);
+		speedL = map(errorL*Kp + (errorL-lastErrorL)*Kd + totalErrorL*Ki, -targetL, targetL, -MAX_SPEED, MAX_SPEED);
+		speedR = map(errorR*Kp + (errorR-lastErrorR)*Kd + totalErrorR*Ki, -targetR, targetR, -MAX_SPEED, MAX_SPEED);
+		if (isTurn){
+			if (target>0) //right turn
+				setSpeed(speedL,-speedR);
+			else //left turn
+				setSpeed(-speedL,speedR);
+		}
+		else
+			setSpeed(speedL,speedR);
 
 		// D
 		lastErrorL = errorL;
@@ -233,10 +231,6 @@ void drivePID(double target, bool isTurn, pros::ADIEncoder *sensorL, pros::ADIEn
 		pros::delay(10);
 	}
 	setSpeed(0,0);
-	left_mtr1.set_reversed(false);
-	left_mtr2.set_reversed(false);
-	right_mtr1.set_reversed(true);
-	right_mtr2.set_reversed(true);
 	pros::delay(100);
 	std::cout << "FINAL READINGS" << '\n';
 	std::cout << "E: " << error << "	Average: " << average << "	LPos: " << sensorL->get_value() << "	RPos: " << sensorR->get_value() << '\n';
@@ -252,6 +246,7 @@ void flywheelPID(double target, pros::Motor *mtrL, pros::Motor *mtrR, double Kp,
 		int integralLimit = 100;
 	 	double adjustmentL =0;
 		double adjustmentR = 0;
+		int maxSpeed = 127;
 		std::deque <double> que;
 		que.push_front(error); // one element
 		mtrL->tare_position();
@@ -313,10 +308,10 @@ void flywheelPID(double target, pros::Motor *mtrL, pros::Motor *mtrR, double Kp,
 		adjustmentR = errorR*Kp + (errorR-lastErrorR)*Kd + totalErrorR*Ki;
 		speedL += adjustmentL;
 		speedR += adjustmentR;
-		if (speedL >= 127)
-			speedL = 127;
-		if (speedR >=127)
-			speedR = 127;
+		if (speedL >= maxSpeed)
+			speedL = maxSpeed;
+		if (speedR >=maxSpeed)
+			speedR = maxSpeed;
 
 		mtrL->move(speedL);
 		mtrR->move(speedR);
@@ -368,15 +363,16 @@ void armPID(void* a_arg){
 	double totalError = 0;
 	double speed = 50;
 	double average = 0;
-	double integralLimit = 10;
+	double integralLimit = 30;
 	double sum = error;
 	int counter = 0;
+	double totalAdjustment = 0;
 	std::deque <double> que;
 	que.push_front(error); // one element in stack.
 	mtr->move(speed);
 	error = target - mtr->get_position();
 	//while(true){
-	while(pros::c::task_notify_take(true, TIMEOUT_MAX)){
+	while(true){
 		error = target - mtr->get_position();
 
 
@@ -388,6 +384,9 @@ void armPID(void* a_arg){
 		}
 		else
 			totalError = 0;
+
+		totalAdjustment = error*Kp + (error-lastError)*Kd + totalError*Ki;
+
 		//LIMITED STACK TO 5 ELEMENTS (error readings) for averaging
 		if (que.size()<3){
 		//stack not full yet, keep pushing elements in and summing individually.
@@ -399,27 +398,29 @@ void armPID(void* a_arg){
 		sum += error - que.back();
 		que.push_front(error);
 		}
-		if ((error-lastError) == 0)
+
+		if ((error-lastError) == 0) //error has not changed
 		{
 			counter++;
-			if (counter == 15)
-				break;
+			//if (counter == 10 & fabs(error)>5)
+			//	break;
 		}
-		speed =map(error*Kp + (error-lastError)*Kd + totalError*Ki,-target,target, -MAX_SPEED, MAX_SPEED);
+	//	speed =map(totalAdjustment,-target,target, -MAX_SPEED, MAX_SPEED);
+		speed = totalAdjustment;
 		if (speed >= 127)
 			speed = 127;
 
 
-		mtr->move(speed);
+		mtr->move(127);
 
 		lastError = error;
 
 		//std::cout << "E: " << error << "	Average: " << average << "	Pos: " << mtr->get_position() << '\n';
-		std::cout << "E: " << error << "	Pos: " << mtr->get_position() << '\n';
+		std::cout << "E: " << error << "	Pos: " << mtr->get_position() << "	Adj: " << totalAdjustment<< "	Speed: " << speed << "	Actual Speed: " << mtr->get_actual_velocity()<< '\n';
 		pros::delay(100);
 	}
 
-	mtr->move(0);
+	//	mtr->move(0);
 	if (rev==true)
 	{//unreverse
 	 	if (mtr->is_reversed())
@@ -444,7 +445,7 @@ void drivePID(void* d_arg){
 		double Ki = ((drive_arg*)d_arg) -> Ki;
 		double Kd = ((drive_arg*)d_arg) -> Kd;
 
-		double errorL, errorR, speedL, speedR, sum;
+		double errorL, errorR, speedL, speedR, sum,targetL,targetR;
 		int adjustmentL =0;
 		int adjustmentR = 0;
 		double average = 0;
@@ -458,44 +459,33 @@ void drivePID(void* d_arg){
 		sensorL->reset();
 		sensorR->reset();
 		pros::delay(1000);
+		std::cout<< "TURN: " << isTurn <<"\n";
 		if (isTurn)
 		{
 			if(target>0)//positve target = right turn, negative target = left turn
 			{
-					//reverse right side motors
-					if (right_mtr1.is_reversed() && right_mtr2.is_reversed()){
-						right_mtr1.set_reversed(false);
-						right_mtr2.set_reversed(false);
-					}
-					else{
-						right_mtr1.set_reversed(true);
-						right_mtr2.set_reversed(true);
-					}
+					targetL = target;
+					targetR = -target;
 			}
 			else{
-					//reverse left side motors
-					if (left_mtr1.is_reversed() && left_mtr2.is_reversed()){
-						left_mtr1.set_reversed(false);
-						left_mtr2.set_reversed(false);
-					}
-					else{
-						left_mtr1.set_reversed(true);
-						left_mtr2.set_reversed(true);
-					}
-					target = -target;
+					targetL = -target;
+					targetR = target;
 			}
-
 		}
-		errorL = target - sensorL->get_value();
-		errorR = target + sensorR->get_value();
-		std::cout << "Left_E: " << errorL << "	Right_E: " << errorR << "	LPos: " << sensorL->get_value() << "	RPos: " << sensorR->get_value() << '\n';
+		else{
+			targetL = target;
+			targetR = target;
+		}
+		errorL = targetL - sensorL->get_value();
+		errorR = targetR - sensorR->get_value();
+		std::cout << "TargetL: " << targetL << "	TargetR: "<< targetR << "	Left_E: " << errorL << "	Right_E: " << errorR << "	LPos: " << sensorL->get_value() << "	RPos: " << sensorR->get_value() << '\n';
 
 		while (fabs(errorL)> 2 | fabs(errorR)>2) 	 {
 		//		while(!(average < 3 && average > -3)){
 
 		// P
-		errorL = target - sensorL->get_value();
-		errorR = target + sensorR->get_value();
+		errorL = targetL - sensorL->get_value();
+		errorR = targetR - sensorR->get_value();
 
 
 		// I - starts summing after a certain threshold and ensures total error doesn't become very large
@@ -530,9 +520,17 @@ void drivePID(void* d_arg){
 					}
 					average = sum/(size(que));
 		*/
-		speedL = map(errorL*Kp + (errorL-lastErrorL)*Kd + totalErrorL*Ki, -target, target, -MAX_SPEED, MAX_SPEED);
-		speedR = map(errorR*Kp + (errorR-lastErrorR)*Kd + totalErrorR*Ki, -target, target, -MAX_SPEED, MAX_SPEED);
-		setSpeed(speedL,speedR);
+		speedL = map(errorL*Kp + (errorL-lastErrorL)*Kd + totalErrorL*Ki, -targetL, targetL, -MAX_SPEED, MAX_SPEED);
+		speedR = map(errorR*Kp + (errorR-lastErrorR)*Kd + totalErrorR*Ki, -targetR, targetR, -MAX_SPEED, MAX_SPEED);
+		if (isTurn){
+			if (target>0) //right turn
+				setSpeed(speedL,-speedR);
+			else //left turn
+				setSpeed(-speedL,speedR);
+		}
+		else
+			setSpeed(speedL,speedR);
+
 
 		// D
 		lastErrorL = errorL;
@@ -701,23 +699,20 @@ void turn (double angle_in_inches){
 	//running the turn command as a Task
 	drive_arg* arg = new drive_arg();
 	arg->target = inchesToDegrees(angle_in_inches);
+	arg->isTurn = true;
   arg->sensorL = &left_sensor;
 	arg->sensorR = &right_sensor;
   arg->Kp = 1.1;
 	arg->Ki = 0.2;
 	arg->Kd = 2.75;
 	pros::task_t turn = pros::c::task_create(drivePID,arg,TASK_PRIORITY_DEFAULT, TASK_STACK_DEPTH_DEFAULT, "Turn");
-	pros::Task do_turn(turn);
-
 	//running the turn command normally
 	//drivePID(inchesToDegrees(angle_in_inches),true,&left_sensor,&right_sensor,1.1,0.2,2.75);
 }
 void armControl(){
 	int rotationDegrees = 0;
-	int armSpeed = 0;
-	int arm_rotationDegrees = 0;
-	resetArm();
 
+	resetArm();
 
 	switch (stage){
 		case 1:{
@@ -739,7 +734,7 @@ void armControl(){
 
 			//Raise claw using Task
 			arm_arg* arg = new arm_arg();
-			arg->target = (36/12)*120;
+			arg->target = 360;
 			arg->mtr = &claw;
 			arg->Kp = 1;
 			arg->Ki = 0;
@@ -747,7 +742,8 @@ void armControl(){
 			raise_claw = pros::c::task_create(armPID,arg,TASK_PRIORITY_DEFAULT, TASK_STACK_DEPTH_DEFAULT, "Raise");
 			// pros::Task do_raise(raise_claw);
 			// do_raise.suspend();
-			pros::c::task_notify(raise_claw);
+		//	pros::c::task_notify(raise_claw);
+			pros::delay(20);
 
 			left_arm = 110;
 			right_arm = 110;
@@ -791,12 +787,9 @@ void armControl(){
 			left_arm = 0;
 			right_arm = 0;
 			pros::c::task_notify_clear(raise_claw);
+			// lower claw here
 
-			stage = 4;
-			break;
-		}
-		case 4:{
-
+			stage = 2;
 			break;
 		}
 	}

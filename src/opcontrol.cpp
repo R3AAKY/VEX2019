@@ -26,7 +26,9 @@
 
 void controller(){
   bool shooterOn = false;
+  bool intakeOn = false;
 	int shooterSpeed = 100;
+  int intakeSpeed = 127;
   while (true) {
  		int left = master.get_analog(ANALOG_LEFT_Y);
  		int right = -master.get_analog(ANALOG_RIGHT_Y);
@@ -43,8 +45,8 @@ void controller(){
  			right_mtr1.move_velocity(0);
  			right_mtr2.move_velocity(0);
  		}else{
- 			right_mtr1 = right;
- 			right_mtr2 = right;
+ 			right_mtr1 = -right;
+ 			right_mtr2 = -right;
  		}
 
  		if(master.get_digital(pros::E_CONTROLLER_DIGITAL_A))
@@ -53,14 +55,67 @@ void controller(){
  		if(master.get_digital(pros::E_CONTROLLER_DIGITAL_B))
  			shooterOn = false;
 
+
+    if(master.get_digital(pros::E_CONTROLLER_DIGITAL_Y))
+ 			intakeOn = true;
+
+ 		if(master.get_digital(pros::E_CONTROLLER_DIGITAL_X))
+ 			intakeOn = false;
+
+    //Raise Arm
+    if(master.get_digital(pros::E_CONTROLLER_DIGITAL_R1))
+    {
+      left_arm = 100;
+      right_arm = 100;
+      while (limit_switch1.get_value()!= 1){
+        if (master.get_digital(pros::E_CONTROLLER_DIGITAL_R2))
+          break;
+      pros::delay(2);
+      }
+      left_arm = 0;
+      right_arm = 0;
+    }
+
+    //Lower Arm
+    if(master.get_digital(pros::E_CONTROLLER_DIGITAL_R2))
+    {
+      left_arm = -65;
+      right_arm = -65;
+      while (limit_switch2.get_value()!= 1){
+        if (master.get_digital(pros::E_CONTROLLER_DIGITAL_R1))
+          break;
+      pros::delay(2);
+      }
+      left_arm = 0;
+      right_arm = 0;
+    }
+
+    //Raise Claw
+    if(master.get_digital(pros::E_CONTROLLER_DIGITAL_L1))
+    {
+      claw.move_relative(375,100);
+    }
+
+    //Lower Claw
+    if(master.get_digital(pros::E_CONTROLLER_DIGITAL_L2))
+    {
+
+        claw.move_relative(-375,-70);
+    }
+
  		if(shooterOn){
  			left_flywheel = shooterSpeed;
- 			right_flywheel = -shooterSpeed;
+ 			right_flywheel = shooterSpeed;
  		}
     else{
  		  left_flywheel = 0;
  			right_flywheel = 0;
  		}
+
+    if(intakeOn)
+   		intake = intakeSpeed;
+    else
+ 		  intake = 0;
   }
 }
 
@@ -68,7 +123,8 @@ void controller(){
 void debugArm(void* param){
   resetArm();
   while(true){
-    std::cout<< "   L_CLAW: " << claw.get_position() << " L_ARM: " << left_arm.get_position() << "  R_ARM: " << right_arm.get_position() <<  "\n";
+    //std::cout<< "   L_CLAW: " << claw.get_position() << " L_ARM: " << left_arm.get_position() << "  R_ARM: " << right_arm.get_position() <<  "\n";
+    std::cout<< "   L_CLAW: " << claw.get_position() <<"\n";
     pros::delay(500);
   }
 }
@@ -83,19 +139,23 @@ void debugDrive(void* param){
 void multitask_test(){
   // example of multitask
   pros::task_t my_task = pros::c::task_create(debugArm,NULL,TASK_PRIORITY_DEFAULT, TASK_STACK_DEPTH_DEFAULT, "Debug Arm");
-  pros::task_t my_task_2 = pros::c::task_create(debugDrive,NULL,TASK_PRIORITY_DEFAULT, TASK_STACK_DEPTH_DEFAULT, "Debug Drive");
+//  pros::task_t my_task_2 = pros::c::task_create(debugDrive,NULL,TASK_PRIORITY_DEFAULT, TASK_STACK_DEPTH_DEFAULT, "Debug Drive");
   pros::Task debug_arm_task(my_task);
-  pros::Task debug_drive_task(my_task_2);
+//s  pros::Task debug_drive_task(my_task_2);
 }
 
 void opcontrol() {
+  //runFlywheel(127);
+//  controller();
+//  multitask_test();
 // TUNED 0-40
 //  flywheelPID(40, &left_flywheel, &right_flywheel, 0.0035, 0, 1.1);
 //flywheelPID(50, &left_flywheel, &right_flywheel, 0.0035, 0.04, 0);
 //TUNED 90-120
 //INTAKE_19 = 80;
-//flywheelPID(100,&left_flywheel, &right_flywheel, 0.122, 0, 1.1);
-
+//flywheelPID(127,&left_flywheel, &right_flywheel, 0.122, 0, 1.1);
+//left_flywheel.move_velocity(127);
+//right_flywheel=127;
 /*
 left_flywheel = 40;
 right_flywheel = 40;
@@ -108,7 +168,7 @@ pros::delay(10);
 left_flywheel = 0;
 right_flywheel = 0;
 */
-//moveStraight(10);
+moveStraight(5);
 //turn(TURN_90);
 //turn(-TURN_90);
 // while(true)
@@ -156,6 +216,7 @@ right_flywheel = 0;
   */
 
  //claw = 100;
+ //claw = 127;
 //pros::Task drive_task(drivePID,(10,left_sensor,right_sensor,KP,KD,KI));
 //armControl();
 //armControl();

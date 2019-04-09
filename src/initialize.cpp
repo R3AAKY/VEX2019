@@ -38,7 +38,7 @@ pros::Motor left_flywheel (L_FLY);
 pros::Motor intake(INTAKE,true);
 
 pros::Motor right_arm(RIGHT_ARM, true);
-pros::Motor left_arm(LEFT_ARM,false);
+pros::Motor left_arm(LEFT_ARM, false);
 pros::Motor claw(CLAW, true);
 
 pros::ADIGyro gyro('H');
