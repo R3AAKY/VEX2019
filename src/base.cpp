@@ -11,6 +11,7 @@ double circ = pi*wheelDiameter;
 //pros::Mutex mutex = mutex();
 pros::task_t raise_claw;
 pros::task_t fly;
+pros::Task do_fly = fly;
 int stage=2; //arm default stage
 
 double inchesToDegrees(double inches){
@@ -650,12 +651,12 @@ void flywheelPID(void* f_arg){
 			break;
 		else
 		{
-			fprintf(f,"%d   %f    %f\n",count*250, mtrL->get_actual_velocity(), mtrR->get_actual_velocity());
+		//	fprintf(f,"%d   %f    %f\n",count*250, mtrL->get_actual_velocity(), mtrR->get_actual_velocity());
 			count++;
 		}
 	}
 	fclose(f);
-	mtrL->move (0);
+	mtrL->move(0);
 	mtrR->move(0);
 	pros::delay(100);
 
@@ -799,18 +800,29 @@ void armControl(){
 // 1 motor rotation = 25 rotations wheel
 // 25 *360 = 90000 degrees
 
+bool created = false;
 void runFlywheel(double target){
-	flywheel_arg* arg = new flywheel_arg();
-	arg->target = target;
-	arg->mtrL = &left_flywheel;
-	arg->mtrR = &right_flywheel;
-	arg->Kp = 1;
-	arg->Ki = 0;
-	arg->Kd = 0;
-	fly = pros::c::task_create(flywheelPID,arg,TASK_PRIORITY_DEFAULT, TASK_STACK_DEPTH_DEFAULT, "Flywheel");
-	pros::c::task_notify(fly);
+
+	if (created == false){
+		flywheel_arg* arg = new flywheel_arg();
+		arg->target = target;
+		arg->mtrL = &left_flywheel;
+		arg->mtrR = &right_flywheel;
+		arg->Kp = 1;
+		arg->Ki = 0;
+		arg->Kd = 0;
+		created=true;
+		fly = pros::c::task_create(flywheelPID,arg,TASK_PRIORITY_DEFAULT, TASK_STACK_DEPTH_DEFAULT, "Flywheel");
+	}
+	// else
+//		pros::c::task_resume(fly);
 }
 
 void stopFlywheel(){
-	pros::c::task_notify_clear(fly);
+	if(created){
+		pros::c::task_delete(fly);
+		left_flywheel=0;
+		right_flywheel=0;
+		created=false;
+	}
 }

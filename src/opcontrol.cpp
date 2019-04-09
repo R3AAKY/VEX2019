@@ -27,7 +27,7 @@
 void controller(){
   bool shooterOn = false;
   bool intakeOn = false;
-	int shooterSpeed = 100;
+	double shooterSpeed = 100;
   int intakeSpeed = 127;
   while (true) {
  		int left = master.get_analog(ANALOG_LEFT_Y);
@@ -50,11 +50,16 @@ void controller(){
  		}
 
  		if(master.get_digital(pros::E_CONTROLLER_DIGITAL_A))
- 			shooterOn = true;
+    {
+ 			//shooterOn = true;
+      runFlywheel(127);
 
- 		if(master.get_digital(pros::E_CONTROLLER_DIGITAL_B))
- 			shooterOn = false;
+    }
 
+ 		if(master.get_digital(pros::E_CONTROLLER_DIGITAL_B)){
+ 		//shooterOn = false;
+    stopFlywheel();
+    }
 
     if(master.get_digital(pros::E_CONTROLLER_DIGITAL_Y))
  			intakeOn = true;
@@ -70,7 +75,7 @@ void controller(){
       while (limit_switch1.get_value()!= 1){
         if (master.get_digital(pros::E_CONTROLLER_DIGITAL_R2))
           break;
-      pros::delay(2);
+      pros::delay(20);
       }
       left_arm = 0;
       right_arm = 0;
@@ -84,7 +89,7 @@ void controller(){
       while (limit_switch2.get_value()!= 1){
         if (master.get_digital(pros::E_CONTROLLER_DIGITAL_R1))
           break;
-      pros::delay(2);
+      pros::delay(20);
       }
       left_arm = 0;
       right_arm = 0;
@@ -103,14 +108,6 @@ void controller(){
         claw.move_relative(-375,-70);
     }
 
- 		if(shooterOn){
- 			left_flywheel = shooterSpeed;
- 			right_flywheel = shooterSpeed;
- 		}
-    else{
- 		  left_flywheel = 0;
- 			right_flywheel = 0;
- 		}
 
     if(intakeOn)
    		intake = intakeSpeed;
@@ -145,8 +142,8 @@ void multitask_test(){
 }
 
 void opcontrol() {
-  //runFlywheel(127);
-//  controller();
+  controller();
+
 //  multitask_test();
 // TUNED 0-40
 //  flywheelPID(40, &left_flywheel, &right_flywheel, 0.0035, 0, 1.1);
@@ -168,7 +165,7 @@ pros::delay(10);
 left_flywheel = 0;
 right_flywheel = 0;
 */
-moveStraight(5);
+//moveStraight(5);
 //turn(TURN_90);
 //turn(-TURN_90);
 // while(true)
